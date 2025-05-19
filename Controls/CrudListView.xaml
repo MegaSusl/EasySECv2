@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView 
+    x:Class="EasySECv2.Controls.CrudListView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:EasySECv2.Controls"
+    x:Name="Root">
+
+    <ContentView.Resources>
+        <controls:NullToBoolConverter x:Key="NullToBool" />
+    </ContentView.Resources>
+
+    <Grid RowSpacing="12" Padding="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <!-- Фильтры -->
+            <RowDefinition Height="Auto" />
+            <!-- Кнопки -->
+            <RowDefinition Height="*" />
+            <!-- Таблица -->
+        </Grid.RowDefinitions>
+
+        <!-- 1) Место для фильтров -->
+        <ContentView
+        x:Name="FilterHost"
+        Grid.Row="0"
+        Margin="0,0,0,12"
+        IsVisible="{Binding FilterTemplate, Source={x:Reference Root}, Converter={StaticResource NullToBool}}" />
+
+        <!-- 2) Кнопки действий -->
+        <HorizontalStackLayout 
+        Grid.Row="1" 
+        Spacing="8"
+        IsVisible="{Binding AddCommand, Source={x:Reference Root}, Converter={StaticResource NullToBool}}">
+            <Button Text="Добавить"    Command="{Binding AddCommand, Source={x:Reference Root}}" />
+            <Button Text="Импорт"      Command="{Binding ImportCommand, Source={x:Reference Root}}"
+              IsVisible="{Binding ImportCommand, Source={x:Reference Root}, Converter={StaticResource NullToBool}}" />
+            <Button Text="Обновить"    Command="{Binding RefreshCommand, Source={x:Reference Root}}" />
+        </HorizontalStackLayout>
+
+        <Frame 
+            Grid.Row="2"
+            CornerRadius="8"
+            Padding="10,0,10,10"
+            HasShadow="True"
+            BackgroundColor="{StaticResource Surface}">
+            <Grid RowSpacing="0">
+                <Grid.RowDefinitions>
+                    <!-- Хедер -->
+                    <RowDefinition Height="Auto" />
+                    <!-- Список, забирает всё оставшееся пространство -->
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- 1) Хост для заголовков -->
+                <ContentView
+                    x:Name="HeaderHost"
+                    Grid.Row="0"
+                    Padding="10"
+                    IsVisible="{Binding HeaderTemplate, Source={x:Reference Root}, Converter={StaticResource NullToBool}}" />
+
+                <!-- 2) Сама коллекция, теперь она в ограниченном ряду и скроллится -->
+                <CollectionView
+                    Grid.Row="1"
+                    ItemsSource="{Binding ItemsSource, Source={x:Reference Root}}"
+                    ItemTemplate="{Binding RowTemplate, Source={x:Reference Root}}"
+                    SelectionMode="Single"
+                    SelectedItem="{Binding SelectedItem, Source={x:Reference Root}, Mode=TwoWay}" />
+            </Grid>
+        </Frame>
+
+    </Grid>
+</ContentView>

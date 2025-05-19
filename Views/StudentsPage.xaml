@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="EasySECv2.Views.StudentsPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:EasySECv2.ViewModels"
+    xmlns:controls="clr-namespace:EasySECv2.Controls"
+    Title="Список студентов"
+    BackgroundColor="{StaticResource PageBackground}">
+
+    <ContentPage.Resources>
+        <!-- Шаблон заголовка столбцов -->
+        <DataTemplate x:Key="StudentHeaderTemplate">
+            <Grid
+                BackgroundColor="{StaticResource Background}"                        
+                ColumnDefinitions="60,2*,2*,1*,1*">
+                
+                <Label Text="ID"           TextColor="{StaticResource PrimaryDarkText}" BackgroundColor="{StaticResource Background}"/>
+                <Label Text="ФИО"          TextColor="{StaticResource PrimaryDarkText}" BackgroundColor="{StaticResource Background}" Grid.Column="1" />
+                <Label Text="Группа"       TextColor="{StaticResource PrimaryDarkText}" BackgroundColor="{StaticResource Background}" Grid.Column="2" />
+                <Label Text="Направление"  TextColor="{StaticResource PrimaryDarkText}" BackgroundColor="{StaticResource Background}" Grid.Column="3" />
+                <Label Text="Действия"     TextColor="{StaticResource PrimaryDarkText}" BackgroundColor="{StaticResource Background}" Grid.Column="4" HorizontalOptions="End" />
+            </Grid>
+        </DataTemplate>
+        <!-- 1) Шаблон фильтров -->
+        <DataTemplate x:Key="StudentFilterTemplate">
+            <Frame HasShadow="True"
+             CornerRadius="8"
+             Padding="12"
+             BackgroundColor="{StaticResource PrimaryLight}">
+                <Grid ColumnSpacing="12" RowSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.2*" />
+                        <ColumnDefinition Width="1.2*" />
+                    </Grid.ColumnDefinitions>
+
+                    <SearchBar
+              Grid.Column="0"
+              Placeholder="Поиск по ФИО или ID"
+              Text="{Binding SearchQuery}"
+              BackgroundColor="{StaticResource AccentLight}"
+              PlaceholderColor="{StaticResource TextSecondary}"
+              TextColor="{StaticResource TextPrimary}"
+              CancelButtonColor="{StaticResource AccentColor}" />
+
+                    <Picker
+              Grid.Column="1"
+              Title="Группа"
+              ItemsSource="{Binding Groups}"
+              ItemDisplayBinding="{Binding name}"
+              SelectedItem="{Binding SelectedGroup}"
+              BackgroundColor="{StaticResource AccentLight}"
+              TextColor="{StaticResource TextPrimary}" />
+
+                    <Picker
+              Grid.Column="2"
+              Title="Направление"
+              ItemsSource="{Binding Orientations}"
+              ItemDisplayBinding="{Binding name}"
+              SelectedItem="{Binding SelectedOrientation}"
+              BackgroundColor="{StaticResource AccentLight}"
+              TextColor="{StaticResource TextPrimary}" />
+
+                    <Picker
+              Grid.Column="3"
+              Title="Сортировка"
+              ItemsSource="{Binding SortOptions}"
+              SelectedItem="{Binding SelectedSortOption}"
+              BackgroundColor="{StaticResource AccentLight}"
+              TextColor="{StaticResource TextPrimary}" />
+                </Grid>
+            </Frame>
+        </DataTemplate>
+
+        <DataTemplate x:Key="StudentRowTemplate">
+            <Frame
+      CornerRadius="8"
+      HasShadow="False"
+      Padding="0"
+      Margin="0,4"
+      BackgroundColor="{StaticResource Surface}">
+                <Grid
+        Padding="12,6"
+        ColumnDefinitions="60,2*,2*,1*,1*"
+        RowSpacing="8">
+                    <Label
+          Text="{Binding id}"
+          TextColor="{StaticResource TextSecondary}"
+          VerticalOptions="Center" />
+                    <Label
+          Grid.Column="1"
+          Text="{Binding FullName}"
+          TextColor="{StaticResource TextPrimary}"
+          VerticalOptions="Center" />
+                    <Label
+          Grid.Column="2"
+          Text="{Binding GroupName}"
+          TextColor="{StaticResource TextSecondary}"
+          VerticalOptions="Center" />
+                    <Label
+          Grid.Column="3"
+          Text="{Binding OrientationName}"
+          TextColor="{StaticResource TextSecondary}"
+          VerticalOptions="Center" />
+
+                    <HorizontalStackLayout
+          Grid.Column="4"
+          Spacing="6"
+          HorizontalOptions="End">
+                        <Button
+            Text="✎"
+            Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=EditCommand}"
+            CommandParameter="{Binding .}"
+            WidthRequest="32"
+            HeightRequest="32"
+            BackgroundColor="{StaticResource AccentColor}"
+            TextColor="White"
+            CornerRadius="4" />
+                        <Button
+            Text="🗑"
+            Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=DeleteCommand}"
+            CommandParameter="{Binding .}"
+            WidthRequest="32"
+            HeightRequest="32"
+            BackgroundColor="#F44336"
+            TextColor="White"
+            CornerRadius="4" />
+                    </HorizontalStackLayout>
+                </Grid>
+            </Frame>
+        </DataTemplate>
+
+    </ContentPage.Resources>
+
+    <!-- 3) Сам контрол -->
+    <controls:CrudListView
+        ItemsSource="{Binding Students}"
+        RowTemplate="{StaticResource StudentRowTemplate}"
+        HeaderTemplate="{StaticResource StudentHeaderTemplate}"
+        FilterTemplate="{StaticResource StudentFilterTemplate}"
+        AddCommand="{Binding AddCommand}"
+        EditCommand="{Binding EditCommand}"
+        DeleteCommand="{Binding DeleteCommand}"
+        ImportCommand="{Binding ImportCommand}"
+        RefreshCommand="{Binding RefreshCommand}"
+        SelectedItem="{Binding SelectedStudent}" />
+
+</ContentPage>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="EasySECv2.Views.FormOfEducationPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:EasySECv2.ViewModels"
+    xmlns:controls="clr-namespace:EasySECv2.Controls"
+    Title="Формы обучения"
+    BackgroundColor="{StaticResource PageBackground}"
+    x:DataType="vm:FormOfEducationViewModel">
+
+    <ContentPage.Resources>
+        <DataTemplate x:Key="FormHeader">
+            <Grid Padding="10" ColumnDefinitions="*,Auto">
+                <Label Text="Название" FontAttributes="Bold" />
+                <Label Text="Действия" FontAttributes="Bold" Grid.Column="1" HorizontalOptions="End" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="FormFilter">
+            <Frame HasShadow="True"
+             CornerRadius="8"
+             Padding="8"
+             Margin="0,0,0,12"
+             BackgroundColor="{StaticResource PrimaryLight}">
+                <SearchBar
+          Placeholder="Поиск по названию"
+          Text="{Binding SearchQuery}"
+          BackgroundColor="{StaticResource AccentLight}"
+          PlaceholderColor="{StaticResource TextSecondary}"
+          TextColor="{StaticResource TextPrimary}"
+          CancelButtonColor="{StaticResource AccentColor}" />
+            </Frame>
+        </DataTemplate>
+
+        <DataTemplate x:Key="FormRow">
+            <Frame
+        CornerRadius="6"
+        HasShadow="False"
+        Padding="0"
+        Margin="0,4"
+        BackgroundColor="{StaticResource Surface}">
+                <Grid Padding="10" ColumnDefinitions="*,Auto">
+                    <Label
+            Text="{Binding name}"
+            VerticalOptions="Center"
+            TextColor="{StaticResource TextPrimary}" />
+                    <HorizontalStackLayout
+            Grid.Column="1"
+            Spacing="6"
+            VerticalOptions="Center">
+                        <Button
+              Text="✎"
+              Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=EditCommand}"
+              CommandParameter="{Binding .}"
+              WidthRequest="32"
+              HeightRequest="32"
+              BackgroundColor="{StaticResource AccentColor}"
+              TextColor="White"
+              CornerRadius="4" />
+                        <Button
+              Text="🗑"
+              Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=DeleteCommand}"
+              CommandParameter="{Binding .}"
+              WidthRequest="32"
+              HeightRequest="32"
+              BackgroundColor="#E53935"
+              TextColor="White"
+              CornerRadius="4" />
+                    </HorizontalStackLayout>
+                </Grid>
+            </Frame>
+        </DataTemplate>
+    </ContentPage.Resources>
+
+    <controls:CrudListView
+    ItemsSource="{Binding Filtered}"
+    HeaderTemplate="{StaticResource FormHeader}"
+    FilterTemplate="{StaticResource FormFilter}"
+    RowTemplate="{StaticResource FormRow}"
+    AddCommand="{Binding AddCommand}"
+    EditCommand="{Binding EditCommand}"
+    DeleteCommand="{Binding DeleteCommand}"
+    RefreshCommand="{Binding RefreshCommand}"
+    SelectedItem="{Binding SelectedItem}" />
+
+</ContentPage>

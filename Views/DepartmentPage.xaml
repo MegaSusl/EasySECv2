@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="EasySECv2.Views.DepartmentPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:EasySECv2.ViewModels"
+    xmlns:controls="clr-namespace:EasySECv2.Controls"
+    Title="Справочник кафедр"
+    BackgroundColor="{StaticResource PageBackground}">
+
+    <ContentPage.Resources>
+        <!-- Заголовок таблицы -->
+        <DataTemplate x:Key="DeptHeaderTemplate">
+            <Grid Padding="10" ColumnDefinitions="*,Auto">
+                <Label Text="Название" FontAttributes="Bold" />
+                <Label Text="Действия" FontAttributes="Bold" Grid.Column="1" HorizontalOptions="End" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- Фильтр: только поиск по названию -->
+        <DataTemplate x:Key="DeptFilterTemplate">
+            <Frame
+          HasShadow="True"
+          CornerRadius="8"
+          Padding="8"
+          Margin="0,0,0,12"
+          BackgroundColor="{StaticResource PrimaryLight}">
+                <SearchBar
+            Placeholder="Поиск по названию"
+            Text="{Binding SearchQuery}"
+            BackgroundColor="{StaticResource AccentLight}"
+            PlaceholderColor="{StaticResource TextSecondary}"
+            TextColor="{StaticResource TextPrimary}"
+            CancelButtonColor="{StaticResource AccentColor}" />
+            </Frame>
+        </DataTemplate>
+
+        <!-- Строка -->
+        <DataTemplate x:Key="DeptRowTemplate">
+            <Frame
+          CornerRadius="6"
+          HasShadow="False"
+          Padding="0"
+          Margin="0,4"
+          BackgroundColor="{StaticResource Surface}">
+                <Grid Padding="10" ColumnDefinitions="*,Auto">
+                    <Label
+              Text="{Binding name}"
+              VerticalOptions="Center"
+              TextColor="{StaticResource TextPrimary}" />
+                    <HorizontalStackLayout
+              Grid.Column="1"
+              Spacing="6"
+              VerticalOptions="Center">
+                        <Button
+                Text="✎"
+                Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=EditCommand}"
+                CommandParameter="{Binding .}"
+                WidthRequest="32" HeightRequest="32"
+                BackgroundColor="{StaticResource AccentColor}"
+                TextColor="White"
+                CornerRadius="4" />
+                        <Button
+                Text="🗑"
+                Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=DeleteCommand}"
+                CommandParameter="{Binding .}"
+                WidthRequest="32" HeightRequest="32"
+                BackgroundColor="#E53935"
+                TextColor="White"
+                CornerRadius="4" />
+                    </HorizontalStackLayout>
+                </Grid>
+            </Frame>
+        </DataTemplate>
+    </ContentPage.Resources>
+
+    <!-- Сам CrudListView -->
+    <controls:CrudListView
+      ItemsSource="{Binding FilteredDepartments}"
+      HeaderTemplate="{StaticResource DeptHeaderTemplate}"
+      FilterTemplate="{StaticResource DeptFilterTemplate}"
+      RowTemplate="{StaticResource DeptRowTemplate}"
+      AddCommand="{Binding AddCommand}"
+      RefreshCommand="{Binding RefreshCommand}"
+      EditCommand="{Binding EditCommand}"
+      DeleteCommand="{Binding DeleteCommand}"
+      SelectedItem="{Binding SelectedDepartment}" />
+
+</ContentPage>

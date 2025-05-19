@@ -1,0 +1,65 @@
+<Shell
+    x:Class="EasySECv2.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:EasySECv2.Views"
+    xmlns:local="clr-namespace:EasySECv2"
+    FlyoutBackgroundColor="{StaticResource PrimaryLight}" 
+    FlyoutBackdrop="#66000000" 
+    FlyoutBackgroundImageAspect="Fill" 
+    
+    FlyoutBehavior="Flyout">
+    <!-- Ресурсы для стилей -->
+    <Shell.Resources>
+        <Style TargetType="Label">
+            <Setter Property="TextColor" Value="White" />
+            <Setter Property="FontSize" Value="16" />
+        </Style>
+        <Style x:Key="HeaderLabelStyle" TargetType="Label">
+            <Setter Property="TextColor" Value="White" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="HorizontalOptions" Value="Center" />
+            <Setter Property="Margin" Value="0,20,0,20" />
+        </Style>
+    </Shell.Resources>
+    
+    <Shell.FlyoutHeader>
+        <Label Text="EasySEC" Style="{StaticResource HeaderLabelStyle}" />
+    </Shell.FlyoutHeader>
+    <!-- Главное меню -->
+    <ShellContent Title="Главная" ContentTemplate="{DataTemplate local:MainPage}" Shell.FlyoutItemIsVisible="True" />
+
+    <FlyoutItem Title="Состав ГЭК" Icon="docs.png">
+        <ShellContent Title="Формирование состава ГЭК" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Замена членов" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Замена секретаря" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="True" />
+    </FlyoutItem>
+    
+    <FlyoutItem Title="Закрепление и уточнение тем ВКР" Icon="docs.png">
+        <ShellContent Title="Форма приказа" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Лист ознакомления" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+    </FlyoutItem>
+    
+    <FlyoutItem Title="Графики проведения испытаний" Icon="docs.png">
+        <ShellContent Title="Кафедра" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="УМУ" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Заседание" Icon="docs.png">
+        <ShellContent Title="Протокол" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Отчет" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Справки" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+    </FlyoutItem>
+
+    <ShellContent Title="Студенты" ContentTemplate="{DataTemplate views:StudentsPage}" Shell.FlyoutItemIsVisible="True" />
+    <ShellContent Title="Персонал" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="True" />
+    <FlyoutItem Title="Настройки" Icon="docs.png">
+        <ShellContent Title="Общие" ContentTemplate="{DataTemplate views:SettingsPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Таблица кафедр" ContentTemplate="{DataTemplate views:DepartmentPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Таблица институтов" ContentTemplate="{DataTemplate views:InstitutePage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Таблица направлений" ContentTemplate="{DataTemplate views:OrientationPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Таблица форм обучения" ContentTemplate="{DataTemplate views:FormOfEducationPage}" Shell.FlyoutItemIsVisible="False" />
+    </FlyoutItem>
+
+</Shell>
