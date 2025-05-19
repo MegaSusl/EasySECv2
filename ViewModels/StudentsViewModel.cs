@@ -168,16 +168,9 @@ namespace EasySECv2.ViewModels
                 Students.Add(s);
             }
         }
-        async void OnAdd()
-        {
-            // теперь действительно ждём, пока Shell выполнит навигацию
-            await Shell.Current.GoToAsync(nameof(GenericEditPage));
-        }
-        async void OnEdit(Student s)
-        {
-            if (s == null) return;
-            await Shell.Current.GoToAsync($"{nameof(GenericEditPage)}?id={s.id}");
-        }
+        async void OnAdd() => await Shell.Current.GoToAsync(nameof(EditStudentPage));
+
+        async void OnEdit(Student s) => await Shell.Current.GoToAsync($"{nameof(EditStudentPage)}?id={s.id}");
 
         private async void OnDelete(Student s)
         {

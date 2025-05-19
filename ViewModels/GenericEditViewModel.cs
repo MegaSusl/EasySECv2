@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -12,29 +13,23 @@ using Microsoft.Maui.Controls;
 
 namespace EasySECv2.ViewModels
 {
-    /// <summary>
-    /// Универсальный VM для создания/редактирования сущности T.
-    /// Поддерживает загрузку существующей записи по id.
-    /// </summary>
-    public class GenericEditViewModel<T> : INotifyPropertyChanged, ILoadableViewModel
+    public class GenericEditViewModel<T> : INotifyPropertyChanged, IGenericEditViewModel
         where T : class, new()
     {
         readonly ICrudService<T> _service;
 
-        /// <summary>Текущая сущность, отображаемая в форме.</summary>
         public T Item { get; private set; }
-
-        /// <summary>Признак: создаём новую или редактируем существующую.</summary>
         public bool IsNew { get; private set; }
 
-        /// <summary>Список свойств, помеченных [Editable], для динамической генерации полей.</summary>
-        public ObservableCollection<PropertyInfo> Fields { get; }
+        // Всё ещё нам удобно хранить именно список PropertyInfo,
+        // но интерфейс требует IList, поэтому мы явно экспонируем его:
+        private readonly ObservableCollection<PropertyInfo> _fields
             = new ObservableCollection<PropertyInfo>();
+        public IList Fields => _fields;
 
         public ICommand SaveCommand { get; }
         public ICommand CancelCommand { get; }
 
-        /// <summary>Событие для закрытия страницы (true — сохранено, false — отмена).</summary>
         public event Action<bool> CloseRequested;
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -44,28 +39,27 @@ namespace EasySECv2.ViewModels
             Item = existing ?? new T();
             IsNew = existing == null;
 
-            // собираем все свойства с атрибутом [Editable]
+            // собираем все [Editable]
             var props = typeof(T)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Select(p => new { Prop = p, Attr = p.GetCustomAttribute<EditableAttribute>(false) })
+                .Select(p => new { Prop = p, Attr = p.GetCustomAttribute<EditableAttribute>() })
                 .Where(x => x.Attr != null)
                 .OrderBy(x => x.Attr.Order)
                 .Select(x => x.Prop);
 
             foreach (var pi in props)
-                Fields.Add(pi);
+                _fields.Add(pi);
 
             SaveCommand = new Command(async () =>
             {
                 await _service.SaveAsync(Item).ConfigureAwait(false);
                 CloseRequested?.Invoke(true);
             });
-            CancelCommand = new Command(() => CloseRequested?.Invoke(false));
+
+            CancelCommand = new Command(() =>
+                CloseRequested?.Invoke(false));
         }
 
-        /// <summary>
-        /// Загружает существующую запись по её первичному ключу и переключает IsNew в false.
-        /// </summary>
         public async Task LoadExistingAsync(long id)
         {
             var existing = await _service.FindByKeyAsync(id).ConfigureAwait(false);
@@ -78,7 +72,7 @@ namespace EasySECv2.ViewModels
             }
         }
 
-        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

@@ -1,73 +1,74 @@
 using System;
 using System.Collections;
-using System.Linq;              // <-- для Cast<>
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using EasySECv2.Attributes;
-using EasySECv2.Models;
 using EasySECv2.Services;
-using EasySECv2.ViewModels;
 using Microsoft.Maui.Controls;
-using Microsoft.Maui.Dispatching; // для MainThread
+using Microsoft.Maui.Dispatching;
 
 namespace EasySECv2.Views
 {
     [QueryProperty(nameof(ItemId), "id")]
     public partial class GenericEditPage : ContentPage
     {
-        public GenericEditPage(GenericEditViewModel<Student> vm)
+        readonly IGenericEditViewModel _vm;
+
+        public GenericEditPage(IGenericEditViewModel vm)
         {
             InitializeComponent();
+
+            _vm = vm;
             BindingContext = vm;
             BuildFields();
         }
 
+        /// <summary>
+        /// При навигации Shell.Current.GoToAsync("GenericEditPage?id=123")
+        /// сюда придёт строковый id — пробуем распарсить и загрузить существующий объект.
+        /// </summary>
         public string ItemId
         {
             set
             {
-                if (long.TryParse(value, out var id)
-                    && BindingContext is ILoadableViewModel loader)
-                {
-                    _ = loader.LoadExistingAsync(id);
-                }
+                if (long.TryParse(value, out var id))
+                    _ = _vm.LoadExistingAsync(id);
             }
         }
 
         void BuildFields()
         {
-            var viewModel = BindingContext;
-            if (viewModel == null) return;
+            FieldsHost.Children.Clear();
 
-            var fieldsProp = viewModel.GetType().GetProperty("Fields");
-            if (fieldsProp == null) return;
-
-            var fields = fieldsProp.GetValue(viewModel) as IEnumerable;
-            if (fields == null) return;
-
-            foreach (PropertyInfo pi in fields)
+            // vm.Fields реализует IList и содержит PropertyInfo
+            foreach (var o in _vm.Fields)
             {
+                if (o is not PropertyInfo pi)
+                    continue;
+
                 var attr = pi.GetCustomAttribute<EditableAttribute>();
-                if (attr == null) continue;
+                if (attr == null)
+                    continue;
 
                 // 1) Label
                 var lbl = new Label { Text = attr.Label };
                 lbl.Style = (Style)Application.Current.Resources["FormLabelStyle"];
 
-                // 2) Контрол
+                // 2) Control
                 View ctrl;
                 if (attr.ControlType == "Picker")
                 {
                     var picker = new Picker { Title = attr.Label };
                     picker.Style = (Style)Application.Current.Resources["FormPickerStyle"];
 
-                    // ищем lookup-коллекцию: имя свойства + "s"
-                    var lookupProp = viewModel.GetType().GetProperty(pi.Name + "s");
+                    // lookup: ищем свойство vm, например "Groups", "Orientations" и т.п.
+                    var lookupProp = _vm.GetType().GetProperty(pi.Name + "s");
                     if (lookupProp != null)
                     {
-                        var rawItems = lookupProp.GetValue(viewModel) as IEnumerable;
+                        var rawItems = lookupProp.GetValue(_vm) as IEnumerable;
                         if (rawItems != null)
                         {
-                            // приводим к IList; иначе материализуем в List<object>
                             IList itemsList = rawItems as IList
                                 ?? rawItems.Cast<object>().ToList();
                             picker.ItemsSource = itemsList;
@@ -76,7 +77,7 @@ namespace EasySECv2.Views
                     }
 
                     picker.SetBinding(Picker.SelectedItemProperty,
-                        new Binding($"Item.{pi.Name}", mode: BindingMode.TwoWay));
+                        new Binding($"Item.{pi.Name}", BindingMode.TwoWay));
                     ctrl = picker;
                 }
                 else
@@ -84,11 +85,11 @@ namespace EasySECv2.Views
                     var entry = new Entry();
                     entry.Style = (Style)Application.Current.Resources["FormEntryStyle"];
                     entry.SetBinding(Entry.TextProperty,
-                        new Binding($"Item.{pi.Name}", mode: BindingMode.TwoWay));
+                        new Binding($"Item.{pi.Name}", BindingMode.TwoWay));
                     ctrl = entry;
                 }
 
-                // 3) Обёртываем Label+Control во Frame
+                // 3) Обёртка
                 var wrapper = new Frame
                 {
                     Style = (Style)Application.Current.Resources["FormFieldFrameStyle"],
@@ -100,7 +101,7 @@ namespace EasySECv2.Views
                 stack.Children.Add(ctrl);
                 wrapper.Content = stack;
 
-                // 4) Добавляем на страницу
+                // 4) Добавляем в FieldsHost
                 FieldsHost.Children.Add(wrapper);
             }
 
@@ -111,24 +112,19 @@ namespace EasySECv2.Views
                 HorizontalOptions = LayoutOptions.Center
             };
             var save = new Button { Text = "Сохранить" };
-            save.SetBinding(Button.CommandProperty, "SaveCommand");
+            save.SetBinding(Button.CommandProperty, nameof(_vm.SaveCommand));
             var cancel = new Button { Text = "Отмена" };
-            cancel.SetBinding(Button.CommandProperty, "CancelCommand");
+            cancel.SetBinding(Button.CommandProperty, nameof(_vm.CancelCommand));
             buttons.Children.Add(save);
             buttons.Children.Add(cancel);
             FieldsHost.Children.Add(buttons);
 
-            // 6) Подписка на закрытие
-            var closeEv = viewModel.GetType().GetEvent("CloseRequested");
-            if (closeEv != null)
+            // 6) При закрытии VM возвращаемся назад
+            _vm.CloseRequested += ok =>
             {
-                closeEv.AddEventHandler(viewModel, new Action<bool>(ok =>
-                {
-                    MainThread.BeginInvokeOnMainThread(async () =>
-                        await Shell.Current.GoToAsync("..")
-                    );
-                }));
-            }
+                MainThread.BeginInvokeOnMainThread(async () =>
+                    await Shell.Current.GoToAsync(".."));
+            };
         }
     }
 }
