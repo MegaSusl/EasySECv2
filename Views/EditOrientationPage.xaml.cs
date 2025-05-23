@@ -6,5 +6,6 @@ namespace EasySECv2.Views
     {
         public EditOrientationPage(GenericEditViewModel<Orientation> vm)
             : base(vm) { }
+
     }
 }

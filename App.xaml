@@ -2,6 +2,7 @@
 <Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:EasySECv2"
+             xmlns:controls="clr-namespace:EasySECv2.Controls"
              x:Class="EasySECv2.App">
     <Application.Resources>
         <ResourceDictionary>
@@ -9,6 +10,14 @@
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            
+            <!-- Конвертер: если количество = 0 → true -->
+            <controls:ZeroToBoolConverter x:Key="ZeroToBoolConverter" />
+
+            <!-- Конвертер: если количество > 0 → true -->
+            <controls:GreaterZeroToBoolConverter x:Key="GreaterZeroToBoolConverter" />
+
+            <controls:GreaterZeroToBoolConverter x:Key="BoolToSelectionModeConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

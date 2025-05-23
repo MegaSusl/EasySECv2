@@ -141,7 +141,14 @@ namespace EasySECv2.Services
             var results = await _database.QueryAsync<TableInfo>(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';")
                 .ConfigureAwait(false);
-            return results.Select(t => t.name).ToList();
+            return results
+              .Select(t =>
+              {
+                  if (string.IsNullOrWhiteSpace(t.name))
+                      return t.name;
+                  return char.ToUpperInvariant(t.name[0]) + t.name.Substring(1);
+              })
+              .ToList();
         }
 
         public async Task<ObservableCollection<Department>> GetAllDepartmentsAsync()
@@ -168,14 +175,69 @@ namespace EasySECv2.Services
         public Task SaveFormOfEducationAsync(FormOfEducation f) => f.id == 0 ? _database.InsertAsync(f) : _database.UpdateAsync(f);
         public Task DeleteFormOfEducationAsync(FormOfEducation f) => _database.DeleteAsync(f);
 
+        public Task<List<Staff>> GetAllStaffAsync() => _database.Table<Staff>().ToListAsync();
+        public Task SaveStaffAsync(Staff f) => f.id == 0 ? _database.InsertAsync(f) : _database.UpdateAsync(f);
+        public Task DeleteStaffAsync(Staff f) => _database.DeleteAsync(f);
         public ICrudService<Student> Students => new CrudService<Student>(
             _database,
-            conn => conn.Table<Student>(),    // <- здесь нужная сигнатура
+            conn => conn.Table<Student>(),
+            (db, item) => item.id == 0
+                ? db.InsertAsync(item)
+                : db.UpdateAsync(item),
+            (db, item) => db.DeleteAsync(item)
+        );
+        public ICrudService<FormOfEducation> FormOfEducation => new CrudService<FormOfEducation>(
+            _database,
+            conn => conn.Table<FormOfEducation>(),
             (db, item) => item.id == 0
                 ? db.InsertAsync(item)
                 : db.UpdateAsync(item),
             (db, item) => db.DeleteAsync(item)
         );
 
+        public List<string> GetAllTableNames()
+            => GetAllTableNamesAsync().GetAwaiter().GetResult();
+
+        //public List<object> GetAllByTableName(string tableName)
+        //    => GetAllByTableNameAsync(tableName).GetAwaiter().GetResult();
+
+        public async Task<List<object>> GetAllByTableNameAsync(string tableName)
+        {
+            var key = tableName?.Trim().ToLowerInvariant() ?? "";
+            switch (key)
+            {
+                case "student":
+                    return (await GetStudentsAsync()).Cast<object>().ToList();
+
+                case "group":
+                    return (await GetAllGroupsAsync()).Cast<object>().ToList();
+
+                case "orientation":
+                    return (await GetAllOrientationsAsync()).Cast<object>().ToList();
+
+                case "formofeducation":
+                    return (await GetAllFormsOfEducationAsync()).Cast<object>().ToList();
+
+                case "institute":
+                    return (await GetAllInstitutesAsync()).Cast<object>().ToList();
+
+                case "department":
+                    return (await GetAllDepartmentsAsync()).Cast<object>().ToList();
+
+                case "staff":
+                    return (await GetAllStaffAsync()).Cast<object>().ToList();
+
+                //case nameof(Position):
+                //    return (await GetAllStaffAsync()).Cast<object>().ToList();
+
+                //case nameof(FinalQualifyingWork):
+                //    return (await GetAllStaffAsync()).Cast<object>().ToList();
+
+                // Добавьте здесь остальные сущности по аналогии…
+
+                default:
+                    return new List<object>();
+            }
+        }
     }
 }

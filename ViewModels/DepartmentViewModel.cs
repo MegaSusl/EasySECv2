@@ -3,21 +3,21 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using EasySECv2.Models;
 using EasySECv2.Services;
+using EasySECv2.Views;
 using Microsoft.Maui.Controls;
 
 namespace EasySECv2.ViewModels
 {
     public class DepartmentViewModel : INotifyPropertyChanged
     {
-        readonly DatabaseService _db;
+        readonly ICrudService<Department> _service;
 
-        // Вся коллекция
-        ObservableCollection<Department> _allDepartments = new();
-        // Отфильтрованная для UI
-        public ObservableCollection<Department> FilteredDepartments { get; } = new();
+        public ObservableCollection<Department> AllItems { get; } = new();
+        public ObservableCollection<Department> Filtered { get; } = new();
 
         string _searchQuery;
         public string SearchQuery
@@ -32,71 +32,88 @@ namespace EasySECv2.ViewModels
             }
         }
 
-        public Department SelectedDepartment { get; set; }
+        Department _selectedItem;
+        public Department SelectedItem
+        {
+            get => _selectedItem;
+            set
+            {
+                if (_selectedItem == value) return;
+                _selectedItem = value;
+                OnPropertyChanged();
+            }
+        }
 
         public ICommand AddCommand { get; }
         public ICommand EditCommand { get; }
         public ICommand DeleteCommand { get; }
         public ICommand RefreshCommand { get; }
 
-        public DepartmentViewModel(DatabaseService db)
+        public event PropertyChangedEventHandler PropertyChanged;
+        void OnPropertyChanged(string prop = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+
+        public DepartmentViewModel(ICrudService<Department> service)
         {
-            _db = db;
+            _service = service;
 
             AddCommand = new Command(OnAdd);
             EditCommand = new Command<Department>(OnEdit);
             DeleteCommand = new Command<Department>(OnDelete);
-            RefreshCommand = new Command(async () => await LoadAsync());
+            RefreshCommand = new Command(async () => await LoadData());
 
-            // начальная загрузка
-            _ = LoadAsync();
+            _ = LoadData();
         }
 
-        async System.Threading.Tasks.Task LoadAsync()
+        async Task LoadData()
         {
-            _allDepartments = new ObservableCollection<Department>(await _db.GetAllDepartmentsAsync());
+            var list = await _service.Query.ToListAsync();
+            AllItems.Clear();
+            foreach (var item in list)
+            {
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
+                AllItems.Add(item);
+            }
             ApplyFilter();
         }
 
         void ApplyFilter()
         {
-            FilteredDepartments.Clear();
-            var list = string.IsNullOrWhiteSpace(SearchQuery)
-                ? _allDepartments
-                : _allDepartments.Where(d => d.name?.Contains(SearchQuery, StringComparison.CurrentCultureIgnoreCase) == true);
-            foreach (var d in list)
-                FilteredDepartments.Add(d);
+            Filtered.Clear();
+            foreach (var item in AllItems.Where(d =>
+                         string.IsNullOrWhiteSpace(SearchQuery)
+                         || (d.name?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)))
+            {
+                Filtered.Add(item);
+            }
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                OnPropertyChanged(nameof(Filtered));
+            });
         }
 
         void OnAdd()
         {
-            var newDept = new Department { name = "" };
-            // сразу сохраняем пустую и открываем в «редакторе»
-            _ = _db.SaveDepartmentAsync(newDept)
-             .ContinueWith(_ => _ = LoadAsync(),
-                           System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
+            Shell.Current.GoToAsync(nameof(EditDepartmentPage));
         }
 
-        async void OnEdit(Department dept)
+        void OnEdit(Department item)
         {
-            if (dept == null) return;
-            // например, можно показать окно ввода (здесь просто сохраняем):
-            await _db.SaveDepartmentAsync(dept);
-            await LoadAsync();
+            if (item == null) return;
+            Shell.Current.GoToAsync($"{nameof(EditDepartmentPage)}?id={item.id}");
         }
 
-        async void OnDelete(Department dept)
+        async void OnDelete(Department item)
         {
-            if (dept == null) return;
-            if (!await Application.Current.MainPage.DisplayAlert(
-                    "Удалить?", $"Точно удалить «{dept.name}»?", "Да", "Отмена"))
-                return;
-            await _db.DeleteDepartmentAsync(dept);
-            await LoadAsync();
-        }
+            if (item == null) return;
+            bool ok = await Application.Current.MainPage.DisplayAlert(
+                "Удалить запись",
+                $"Удалить кафедру «{item.name}»?",
+                "Да", "Нет");
+            if (!ok) return;
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        void OnPropertyChanged([CallerMemberName] string p = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+            await _service.DeleteAsync(item);
+            await LoadData();
+        }
     }
 }

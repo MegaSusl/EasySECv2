@@ -11,4 +11,9 @@ public partial class DepartmentPage : ContentPage
         InitializeComponent();
         BindingContext = vm;
     }
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        (BindingContext as DepartmentViewModel)?.RefreshCommand.Execute(null);
+    }
 }

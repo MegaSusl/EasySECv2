@@ -3,94 +3,118 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using EasySECv2.Models;
 using EasySECv2.Services;
+using EasySECv2.Views;
 using Microsoft.Maui.Controls;
 
 namespace EasySECv2.ViewModels
 {
     public class InstituteViewModel : INotifyPropertyChanged
     {
-        readonly DatabaseService _db;
-        ObservableCollection<Institute> _all = new();
+        readonly ICrudService<Institute> _service;
+
+        public ObservableCollection<Institute> AllItems { get; } = new();
         public ObservableCollection<Institute> Filtered { get; } = new();
 
-        string _search;
+        string _searchQuery;
         public string SearchQuery
         {
-            get => _search;
+            get => _searchQuery;
             set
             {
-                if (_search == value) return;
-                _search = value;
+                if (_searchQuery == value) return;
+                _searchQuery = value;
                 OnPropertyChanged();
                 ApplyFilter();
             }
         }
 
-        public Institute SelectedItem { get; set; }
+        Institute _selectedItem;
+        public Institute SelectedItem
+        {
+            get => _selectedItem;
+            set
+            {
+                if (_selectedItem == value) return;
+                _selectedItem = value;
+                OnPropertyChanged();
+            }
+        }
 
         public ICommand AddCommand { get; }
         public ICommand EditCommand { get; }
         public ICommand DeleteCommand { get; }
         public ICommand RefreshCommand { get; }
 
-        public InstituteViewModel(DatabaseService db)
+        public event PropertyChangedEventHandler PropertyChanged;
+        void OnPropertyChanged(string prop = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+
+        public InstituteViewModel(ICrudService<Institute> service)
         {
-            _db = db;
+            _service = service;
+
             AddCommand = new Command(OnAdd);
             EditCommand = new Command<Institute>(OnEdit);
             DeleteCommand = new Command<Institute>(OnDelete);
-            RefreshCommand = new Command(async () => await LoadAsync());
-            _ = LoadAsync();
+            RefreshCommand = new Command(async () => await LoadData());
+
+            _ = LoadData();
         }
 
-        async System.Threading.Tasks.Task LoadAsync()
+        async Task LoadData()
         {
-            _all = new ObservableCollection<Institute>(
-                await _db.GetAllInstitutesAsync());
+            var list = await _service.Query.ToListAsync();
+            AllItems.Clear();
+            foreach (var item in list)
+            {
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
+                AllItems.Add(item);
+            }
             ApplyFilter();
         }
 
         void ApplyFilter()
         {
             Filtered.Clear();
-            var list = string.IsNullOrWhiteSpace(SearchQuery)
-                ? _all
-                : _all.Where(i =>
-                    i.name.Contains(SearchQuery, StringComparison.CurrentCultureIgnoreCase)
-                 || (i.shortName?.Contains(SearchQuery, StringComparison.CurrentCultureIgnoreCase) ?? false));
-            foreach (var i in list) Filtered.Add(i);
+            foreach (var item in AllItems
+                .Where(i => string.IsNullOrWhiteSpace(SearchQuery)
+                         || i.name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)
+                         || (i.shortName?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)))
+            {
+                Filtered.Add(item);
+            }
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                OnPropertyChanged(nameof(Filtered));
+            });
         }
 
         void OnAdd()
         {
-            var tmp = new Institute { name = "", shortName = "" };
-            _ = _db.SaveInstituteAsync(tmp)
-                 .ContinueWith(_ => LoadAsync(),
-                               System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
+            Shell.Current.GoToAsync(nameof(EditInstitutePage));
         }
 
-        async void OnEdit(Institute inst)
+        void OnEdit(Institute item)
         {
-            if (inst == null) return;
-            await _db.SaveInstituteAsync(inst);
-            await LoadAsync();
+            if (item == null) return;
+            Shell.Current.GoToAsync($"{nameof(EditInstitutePage)}?id={item.id}");
         }
 
-        async void OnDelete(Institute inst)
+        async void OnDelete(Institute item)
         {
-            if (inst == null) return;
-            if (!await Application.Current.MainPage.DisplayAlert(
-                    "Удалить?", $"Удалить институт «{inst.name}»?", "Да", "Нет"))
-                return;
-            await _db.DeleteInstituteAsync(inst);
-            await LoadAsync();
-        }
+            if (item == null) return;
+            bool ok = await Application.Current.MainPage.DisplayAlert(
+                "Удалить запись",
+                $"Удалить институт «{item.name}»?",
+                "Да", "Нет");
+            if (!ok) return;
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        void OnPropertyChanged([CallerMemberName] string p = null) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+            await _service.DeleteAsync(item);
+            await LoadData();
+        }
     }
 }

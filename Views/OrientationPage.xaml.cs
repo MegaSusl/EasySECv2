@@ -9,5 +9,10 @@ namespace EasySECv2.Views
             InitializeComponent();
             BindingContext = vm;
         }
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            (BindingContext as OrientationViewModel)?.RefreshCommand.Execute(null);
+        }
     }
 }

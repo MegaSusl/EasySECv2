@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="EasySECv2.Views.StaffPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:EasySECv2.ViewModels"
+    xmlns:controls="clr-namespace:EasySECv2.Controls"
+    Title="Сотрудники"
+    BackgroundColor="{StaticResource PageBackground}">
+
+    <ContentPage.Resources>
+        <!-- Заголовок таблицы -->
+        <DataTemplate x:Key="StaffHeaderTemplate">
+            <Grid BackgroundColor="{StaticResource Background}" ColumnDefinitions="60,2*,2*,2*,Auto">
+                <Label Text="ID" TextColor="{StaticResource PrimaryDarkText}" />
+                <Label Text="ФИО" TextColor="{StaticResource PrimaryDarkText}" Grid.Column="1" />
+                <Label Text="Степень" TextColor="{StaticResource PrimaryDarkText}" Grid.Column="2" />
+                <Label Text="Награды" TextColor="{StaticResource PrimaryDarkText}" Grid.Column="3" />
+                <Label Text="Действия" TextColor="{StaticResource PrimaryDarkText}" Grid.Column="4" HorizontalOptions="End" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- Фильтр -->
+        <DataTemplate x:Key="StaffFilterTemplate">
+            <Frame HasShadow="True" CornerRadius="8" Padding="8" Margin="0,0,0,12" BackgroundColor="{StaticResource PrimaryLight}">
+                <SearchBar
+                    Placeholder="Поиск по ФИО"
+                    Text="{Binding SearchQuery}"
+                    BackgroundColor="{StaticResource AccentLight}"
+                    PlaceholderColor="{StaticResource TextSecondary}"
+                    TextColor="{StaticResource TextPrimary}"
+                    CancelButtonColor="{StaticResource AccentColor}" />
+            </Frame>
+        </DataTemplate>
+
+        <!-- Строка -->
+        <DataTemplate x:Key="StaffRowTemplate">
+            <Frame CornerRadius="6" HasShadow="False" Padding="0" Margin="0,4" BackgroundColor="{StaticResource Surface}">
+                <Grid Padding="10" ColumnDefinitions="60,2*,2*,2*,Auto">
+                    <Label Text="{Binding id}" TextColor="{StaticResource TextPrimary}" />
+                    <Label Grid.Column="1" Text="{Binding FullName}" TextColor="{StaticResource TextPrimary}" />
+                    <Label Grid.Column="2" Text="{Binding degree}" TextColor="{StaticResource TextPrimary}" />
+                    <Label Grid.Column="3" Text="{Binding degreeAwards}" TextColor="{StaticResource TextPrimary}" />
+                    <HorizontalStackLayout Grid.Column="4" Spacing="6" HorizontalOptions="End">
+                        <Button Text="✎"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=EditCommand}"
+                                CommandParameter="{Binding .}"
+                                WidthRequest="32" HeightRequest="32"
+                                BackgroundColor="{StaticResource AccentColor}"
+                                TextColor="White"
+                                CornerRadius="4" />
+                        <Button Text="🗑"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=DeleteCommand}"
+                                CommandParameter="{Binding .}"
+                                WidthRequest="32" HeightRequest="32"
+                                BackgroundColor="#E53935"
+                                TextColor="White"
+                                CornerRadius="4" />
+                    </HorizontalStackLayout>
+                </Grid>
+            </Frame>
+        </DataTemplate>
+    </ContentPage.Resources>
+
+    <controls:CrudListView
+        ItemsSource="{Binding Filtered}"
+        HeaderTemplate="{StaticResource StaffHeaderTemplate}"
+        FilterTemplate="{StaticResource StaffFilterTemplate}"
+        RowTemplate="{StaticResource StaffRowTemplate}"
+        AddCommand="{Binding AddCommand}"
+        RefreshCommand="{Binding RefreshCommand}"
+        EditCommand="{Binding EditCommand}"
+        DeleteCommand="{Binding DeleteCommand}"
+        SelectedItem="{Binding SelectedItem}" />
+
+</ContentPage>

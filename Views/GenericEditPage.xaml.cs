@@ -21,27 +21,33 @@ namespace EasySECv2.Views
 
             _vm = vm;
             BindingContext = vm;
+
             BuildFields();
+            Title = vm.IsNew ? "Создание новой записи" : "Редактирование";
         }
 
-        /// <summary>
-        /// При навигации Shell.Current.GoToAsync("GenericEditPage?id=123")
-        /// сюда придёт строковый id — пробуем распарсить и загрузить существующий объект.
-        /// </summary>
         public string ItemId
         {
             set
             {
                 if (long.TryParse(value, out var id))
-                    _ = _vm.LoadExistingAsync(id);
+                    _ = LoadAndSetTitle(id);
             }
+        }
+
+        private async Task LoadAndSetTitle(long id)
+        {
+            await _vm.LoadExistingAsync(id);
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                Title = _vm.IsNew ? "Создание новой записи" : "Редактирование";
+            });
         }
 
         void BuildFields()
         {
             FieldsHost.Children.Clear();
 
-            // vm.Fields реализует IList и содержит PropertyInfo
             foreach (var o in _vm.Fields)
             {
                 if (o is not PropertyInfo pi)
@@ -51,26 +57,22 @@ namespace EasySECv2.Views
                 if (attr == null)
                     continue;
 
-                // 1) Label
                 var lbl = new Label { Text = attr.Label };
                 lbl.Style = (Style)Application.Current.Resources["FormLabelStyle"];
 
-                // 2) Control
                 View ctrl;
                 if (attr.ControlType == "Picker")
                 {
                     var picker = new Picker { Title = attr.Label };
                     picker.Style = (Style)Application.Current.Resources["FormPickerStyle"];
 
-                    // lookup: ищем свойство vm, например "Groups", "Orientations" и т.п.
                     var lookupProp = _vm.GetType().GetProperty(pi.Name + "s");
                     if (lookupProp != null)
                     {
                         var rawItems = lookupProp.GetValue(_vm) as IEnumerable;
                         if (rawItems != null)
                         {
-                            IList itemsList = rawItems as IList
-                                ?? rawItems.Cast<object>().ToList();
+                            IList itemsList = rawItems as IList ?? rawItems.Cast<object>().ToList();
                             picker.ItemsSource = itemsList;
                             picker.ItemDisplayBinding = new Binding("name");
                         }
@@ -89,7 +91,12 @@ namespace EasySECv2.Views
                     ctrl = entry;
                 }
 
-                // 3) Обёртка
+                if (pi.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (ctrl is Entry e) e.IsReadOnly = true;
+                    else if (ctrl is Picker p) p.IsEnabled = false;
+                }
+
                 var wrapper = new Frame
                 {
                     Style = (Style)Application.Current.Resources["FormFieldFrameStyle"],
@@ -101,11 +108,9 @@ namespace EasySECv2.Views
                 stack.Children.Add(ctrl);
                 wrapper.Content = stack;
 
-                // 4) Добавляем в FieldsHost
                 FieldsHost.Children.Add(wrapper);
             }
 
-            // 5) Кнопки Сохранить/Отмена
             var buttons = new HorizontalStackLayout
             {
                 Spacing = 12,
@@ -119,7 +124,6 @@ namespace EasySECv2.Views
             buttons.Children.Add(cancel);
             FieldsHost.Children.Add(buttons);
 
-            // 6) При закрытии VM возвращаемся назад
             _vm.CloseRequested += ok =>
             {
                 MainThread.BeginInvokeOnMainThread(async () =>

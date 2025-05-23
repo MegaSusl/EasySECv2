@@ -7,17 +7,17 @@
     xmlns:controls="clr-namespace:EasySECv2.Controls"
     Title="Формы обучения"
     BackgroundColor="{StaticResource PageBackground}"
-    x:DataType="vm:FormOfEducationViewModel">
+    >
 
     <ContentPage.Resources>
         <DataTemplate x:Key="FormHeader">
             <Grid Padding="10" ColumnDefinitions="*,Auto">
-                <Label Text="Название" FontAttributes="Bold" />
-                <Label Text="Действия" FontAttributes="Bold" Grid.Column="1" HorizontalOptions="End" />
+                <Label Text="Название" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+                <Label Text="Действия" FontAttributes="Bold" Grid.Column="1" HorizontalOptions="End" TextColor="{StaticResource TextPrimary}"/>
             </Grid>
         </DataTemplate>
 
-        <DataTemplate x:Key="FormFilter">
+        <DataTemplate x:Key="FormFilter" x:DataType="vm:FormOfEducationViewModel">
             <Frame HasShadow="True"
              CornerRadius="8"
              Padding="8"
@@ -35,20 +35,19 @@
 
         <DataTemplate x:Key="FormRow">
             <Frame
-        CornerRadius="6"
-        HasShadow="False"
-        Padding="0"
-        Margin="0,4"
-        BackgroundColor="{StaticResource Surface}">
+                CornerRadius="6"
+                HasShadow="False"
+                Padding="0"
+                Margin="0,4"
+                BackgroundColor="{StaticResource Surface}">
                 <Grid Padding="10" ColumnDefinitions="*,Auto">
                     <Label
-            Text="{Binding name}"
-            VerticalOptions="Center"
-            TextColor="{StaticResource TextPrimary}" />
+                    Text="{Binding name}"
+                    VerticalOptions="Center" TextColor="{StaticResource TextPrimary}"/>
                     <HorizontalStackLayout
-            Grid.Column="1"
-            Spacing="6"
-            VerticalOptions="Center">
+                        Grid.Column="1"
+                        Spacing="6"
+                        VerticalOptions="Center">
                         <Button
               Text="✎"
               Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=EditCommand}"

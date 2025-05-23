@@ -12,9 +12,9 @@
         <!-- Заголовок -->
         <DataTemplate x:Key="OrientationHeader">
             <Grid Padding="10" ColumnDefinitions="2*,3*,Auto">
-                <Label Text="Код"       FontAttributes="Bold" />
-                <Label Text="Название"  FontAttributes="Bold" Grid.Column="1" />
-                <Label Text="Действия"  FontAttributes="Bold" Grid.Column="2" HorizontalOptions="End" />
+                <Label Text="Код"       FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+                <Label Text="Название"  FontAttributes="Bold" Grid.Column="1" TextColor="{StaticResource TextPrimary}"/>
+                <Label Text="Действия"  FontAttributes="Bold" Grid.Column="2" HorizontalOptions="End" TextColor="{StaticResource TextPrimary}"/>
             </Grid>
         </DataTemplate>
 

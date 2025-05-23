@@ -12,8 +12,8 @@
         <!-- Заголовок таблицы -->
         <DataTemplate x:Key="DeptHeaderTemplate">
             <Grid Padding="10" ColumnDefinitions="*,Auto">
-                <Label Text="Название" FontAttributes="Bold" />
-                <Label Text="Действия" FontAttributes="Bold" Grid.Column="1" HorizontalOptions="End" />
+                <Label Text="Название" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+                <Label Text="Действия" FontAttributes="Bold" Grid.Column="1" HorizontalOptions="End" TextColor="{StaticResource TextPrimary}"/>
             </Grid>
         </DataTemplate>
 
@@ -76,7 +76,7 @@
 
     <!-- Сам CrudListView -->
     <controls:CrudListView
-      ItemsSource="{Binding FilteredDepartments}"
+      ItemsSource="{Binding Filtered}"
       HeaderTemplate="{StaticResource DeptHeaderTemplate}"
       FilterTemplate="{StaticResource DeptFilterTemplate}"
       RowTemplate="{StaticResource DeptRowTemplate}"

@@ -16,7 +16,7 @@ namespace EasySECv2.ViewModels
         readonly ICrudService<FormOfEducation> _service;
 
         public ObservableCollection<FormOfEducation> AllItems { get; }
-            = new ObservableCollection<FormOfEducation>();
+            = new();
 
         public ObservableCollection<FormOfEducation> Filtered { get; }
             = new ObservableCollection<FormOfEducation>();
@@ -72,7 +72,11 @@ namespace EasySECv2.ViewModels
         {
             var list = await _service.Query.ToListAsync();
             AllItems.Clear();
-            foreach (var item in list) AllItems.Add(item);
+            foreach (var item in list)
+            {
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
+                AllItems.Add(item);
+            }
             ApplyFilter();
         }
 
@@ -83,21 +87,25 @@ namespace EasySECv2.ViewModels
                 .Where(i => string.IsNullOrWhiteSpace(SearchQuery)
                          || i.name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
             {
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
                 Filtered.Add(item);
             }
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                OnPropertyChanged(nameof(Filtered)); // Обновление привязки
+            });
         }
 
         void OnAdd()
         {
-            // откроем GenericEditPage для новой Item
-            Shell.Current.GoToAsync(nameof(GenericEditPage));
+            // вместо GenericEditPage
+            Shell.Current.GoToAsync(nameof(EditFormOfEducationPage));
         }
 
         void OnEdit(FormOfEducation item)
         {
             if (item == null) return;
-            // передать id — GenericEditPage подхватит его и загрузит «existing»
-            Shell.Current.GoToAsync($"{nameof(GenericEditPage)}?id={item.id}");
+            Shell.Current.GoToAsync($"{nameof(EditFormOfEducationPage)}?id={item.id}");
         }
 
         async void OnDelete(FormOfEducation item)

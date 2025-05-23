@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="EasySECv2.Views.FieldMappingControl"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit">
+
+    <toolkit:Expander>
+        <!-- Заголовок Expander’а: название маркера -->
+        <toolkit:Expander.Header>
+            <Label Text="{Binding Placeholder}"
+             FontAttributes="Bold"
+             Padding="5"
+             BackgroundColor="#EEE" />
+        </toolkit:Expander.Header>
+
+        <!-- Содержимое Expander’а: только появляется при разворачивании -->
+        <toolkit:Expander.Content>
+            <StackLayout Spacing="10" Padding="5">
+                <HorizontalStackLayout Spacing="15">
+                    <RadioButton
+            Content="Ручной"
+            GroupName="{Binding Placeholder}"
+            IsChecked="{Binding IsManual, Mode=TwoWay}" />
+                    <RadioButton
+            Content="Из таблицы"
+            GroupName="{Binding Placeholder}"
+            IsChecked="{Binding IsFromTable, Mode=TwoWay}" />
+                </HorizontalStackLayout>
+
+                <!-- Ручной ввод -->
+                <Entry
+          Placeholder="Введите значение…"
+          Text="{Binding ManualValue}"
+          IsVisible="{Binding IsManual}" />
+
+                <!-- Выбор таблицы -->
+                <Picker
+          Title="Выберите таблицу…"
+          ItemsSource="{Binding TableNames}"
+          SelectedItem="{Binding SelectedTable}"
+          IsVisible="{Binding IsFromTable}" />
+
+                <!-- Мульти-выбор записей для batch -->
+                <StackLayout Spacing="5">
+
+                    <!-- Фильтр по группе/кафедре -->
+                    <Picker
+                        Title="Фильтровать по…"
+                        ItemsSource="{Binding FilterOptions}"
+                        SelectedItem="{Binding SelectedFilter}"
+                        IsVisible="{Binding FilterOptions.Count, Converter={StaticResource GreaterZeroToBoolConverter}}" />
+
+                    <!-- Поиск по тексту -->
+                    <SearchBar
+                        Placeholder="Поиск…"
+                        Text="{Binding FilterText, Mode=TwoWay}" />
+
+                    <!-- Список с отформатированным текстом -->
+                    <CollectionView
+                        ItemsSource="{Binding FilteredItems}"
+                        SelectionMode="{Binding IsBatchMode, Converter={StaticResource BoolToSelectionModeConverter}}"
+                        SelectedItem="{Binding SelectedItem}"
+                        SelectedItems="{Binding SelectedItems}"
+                        HeightRequest="200">                
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Label Text="{Binding Text}" Padding="5" TextColor="{StaticResource TextPrimary}"/>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+
+
+            </StackLayout>
+        </toolkit:Expander.Content>
+    </toolkit:Expander>
+</ContentView>

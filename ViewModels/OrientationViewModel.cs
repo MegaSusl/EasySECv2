@@ -3,102 +3,118 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using EasySECv2.Models;
 using EasySECv2.Services;
+using EasySECv2.Views;
 using Microsoft.Maui.Controls;
 
 namespace EasySECv2.ViewModels
 {
     public class OrientationViewModel : INotifyPropertyChanged
     {
-        readonly DatabaseService _db;
+        readonly ICrudService<Orientation> _service;
 
-        // вся коллекция из БД
-        ObservableCollection<Orientation> _all = new();
-
-        // та, что отображается
+        public ObservableCollection<Orientation> AllItems { get; } = new();
         public ObservableCollection<Orientation> Filtered { get; } = new();
 
-        string _search;
+        string _searchQuery;
         public string SearchQuery
         {
-            get => _search;
+            get => _searchQuery;
             set
             {
-                if (_search == value) return;
-                _search = value;
+                if (_searchQuery == value) return;
+                _searchQuery = value;
                 OnPropertyChanged();
                 ApplyFilter();
             }
         }
 
-        public Orientation SelectedItem { get; set; }
+        Orientation _selectedItem;
+        public Orientation SelectedItem
+        {
+            get => _selectedItem;
+            set
+            {
+                if (_selectedItem == value) return;
+                _selectedItem = value;
+                OnPropertyChanged();
+            }
+        }
 
         public ICommand AddCommand { get; }
         public ICommand EditCommand { get; }
         public ICommand DeleteCommand { get; }
         public ICommand RefreshCommand { get; }
 
-        public OrientationViewModel(DatabaseService db)
+        public event PropertyChangedEventHandler PropertyChanged;
+        void OnPropertyChanged(string prop = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
+
+        public OrientationViewModel(ICrudService<Orientation> service)
         {
-            _db = db;
+            _service = service;
 
             AddCommand = new Command(OnAdd);
             EditCommand = new Command<Orientation>(OnEdit);
             DeleteCommand = new Command<Orientation>(OnDelete);
-            RefreshCommand = new Command(async () => await LoadAsync());
+            RefreshCommand = new Command(async () => await LoadData());
 
-            // загрузим сразу при старте
-            _ = LoadAsync();
+            _ = LoadData();
         }
 
-        async System.Threading.Tasks.Task LoadAsync()
+        async Task LoadData()
         {
-            _all = new ObservableCollection<Orientation>(
-                await _db.GetAllOrientationsAsync());
+            var list = await _service.Query.ToListAsync();
+            AllItems.Clear();
+            foreach (var item in list)
+            {
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
+                AllItems.Add(item);
+            }
             ApplyFilter();
         }
 
         void ApplyFilter()
         {
             Filtered.Clear();
-            var items = string.IsNullOrWhiteSpace(SearchQuery)
-                ? _all
-                : _all.Where(o =>
-                    (o.name?.Contains(SearchQuery, StringComparison.CurrentCultureIgnoreCase) ?? false)
-                 || (o.code?.Contains(SearchQuery, StringComparison.CurrentCultureIgnoreCase) ?? false));
-            foreach (var o in items)
-                Filtered.Add(o);
+            foreach (var item in AllItems.Where(o =>
+                         string.IsNullOrWhiteSpace(SearchQuery)
+                         || (o.name?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                         || (o.code?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)))
+            {
+                Filtered.Add(item);
+            }
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                OnPropertyChanged(nameof(Filtered));
+            });
         }
 
         void OnAdd()
         {
-            var tmp = new Orientation { name = "", code = "" };
-            _ = _db.SaveOrientationAsync(tmp)
-                 .ContinueWith(_ => LoadAsync(),
-                               System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
+            Shell.Current.GoToAsync(nameof(EditOrientationPage));
         }
 
-        async void OnEdit(Orientation o)
+        void OnEdit(Orientation item)
         {
-            if (o == null) return;
-            await _db.SaveOrientationAsync(o);
-            await LoadAsync();
+            if (item == null) return;
+            Shell.Current.GoToAsync($"{nameof(EditOrientationPage)}?id={item.id}");
         }
 
-        async void OnDelete(Orientation o)
+        async void OnDelete(Orientation item)
         {
-            if (o == null) return;
+            if (item == null) return;
             bool ok = await Application.Current.MainPage.DisplayAlert(
-                "Удалить?", $"Точно удалить «{o.name} ({o.code})»?", "Да", "Отмена");
+                "Удалить запись",
+                $"Удалить направление «{item.name} ({item.code})»?",
+                "Да", "Нет");
             if (!ok) return;
-            await _db.DeleteOrientationAsync(o);
-            await LoadAsync();
-        }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        void OnPropertyChanged([CallerMemberName] string p = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+            await _service.DeleteAsync(item);
+            await LoadData();
+        }
     }
 }

@@ -36,9 +36,11 @@ namespace EasySECv2.Models
         public long formOfEducation { get; set; }
 
         [Indexed]
+        [Editable("Институт", Order = 50, ControlType = "Picker")]
         public long institute { get; set; }
 
         [Indexed]
+        [Editable("Кафедра", Order = 50, ControlType = "Picker")]
         public long department { get; set; }
     }
     public partial class Student

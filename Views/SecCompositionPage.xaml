@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="EasySECv2.Views.SecCompositionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:EasySECv2.ViewModels"
+    xmlns:views="clr-namespace:EasySECv2.Views"
+    Title="Состав ГЭК">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="15">
+            <!-- 1) Заглушка, если нет шаблонов -->
+            <StackLayout
+            x:Name="EmptyState"
+            IsVisible="{Binding Templates.Count, Converter={StaticResource ZeroToBoolConverter}}">
+                <Label Text="Шаблон не загружен" HorizontalOptions="Center" />
+                <Button Text="Загрузить шаблон" Command="{Binding LoadTemplateCommand}" />
+            </StackLayout>
+            <!-- Разрешаем batch-режим только если AllowBatch=true -->
+
+
+
+            <!-- 2) Список шаблонов и кнопки -->
+            <StackLayout
+            x:Name="TemplatesState"
+            IsVisible="{Binding Templates.Count, Converter={StaticResource GreaterZeroToBoolConverter}}">
+                <HorizontalStackLayout Spacing="10" IsVisible="{Binding AllowBatch}">
+                    <CheckBox
+                    IsChecked="{Binding IsBatchMode, Mode=TwoWay}"
+                    VerticalOptions="Center" />
+                    <Label
+                    Text="Массовая генерация"
+                    VerticalOptions="Center"
+                    FontAttributes="Italic" />
+                </HorizontalStackLayout>
+                <Picker
+                Title="Выберите шаблон"
+                ItemsSource="{Binding Templates}"
+                ItemDisplayBinding="{Binding FileName}"
+                SelectedItem="{Binding SelectedTemplate}" />
+
+                <HorizontalStackLayout Spacing="10">
+                    <Button Text="Открыть"   Command="{Binding OpenTemplateCommand}" />
+                    <Button Text="Изменить" Command="{Binding EditTemplateCommand}" />
+                    <Button Text="Удалить"  Command="{Binding DeleteTemplateCommand}" />
+                </HorizontalStackLayout>
+                <CollectionView ItemsSource="{Binding FieldMappings}">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <views:FieldMappingControl />
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+                <VerticalStackLayout Spacing="10" Padding="0,20,0,0">
+                    <HorizontalStackLayout Spacing="10">
+                        <Button Text="Выбрать папку" Command="{Binding PickFolderCommand}" />
+                        <Label Text="{Binding OutputFolder}" VerticalOptions="Center" TextColor="{StaticResource TextPrimary}"/>
+                    </HorizontalStackLayout>
+
+                    <Button
+                    Text="Сгенерировать документ(ы)"
+                    Command="{Binding GenerateCommand}"
+                    IsEnabled="{Binding CanGenerate}" />
+
+                </VerticalStackLayout>
+
+            </StackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

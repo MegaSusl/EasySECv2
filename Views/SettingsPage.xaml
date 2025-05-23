@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage
     x:Class="EasySECv2.Views.SettingsPage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
@@ -5,47 +6,76 @@
     Title="Настройки"
     BackgroundColor="{StaticResource PageBackground}">
 
-    <Grid RowSpacing="16" Padding="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <ScrollView>
+        <VerticalStackLayout Spacing="24" Padding="16">
 
-        <Frame Grid.Row="0"
-           BackgroundColor="{StaticResource CardBackground}"
-           CornerRadius="8"
-           Padding="12"
-           HasShadow="True">
-            <VerticalStackLayout Spacing="8">
-                <Label Text="Выберите таблицу:"
-               FontAttributes="Bold"
-               TextColor="{StaticResource TextPrimary}" />
+            <!-- Существующий блок: очистка таблиц -->
+            <Frame BackgroundColor="{StaticResource CardBackground}"
+               CornerRadius="8"
+               Padding="12"
+               HasShadow="True">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Выберите таблицу:"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource TextPrimary}" />
 
-                <Picker x:Name="TablesPicker"
-                Title="Таблица"
-                TextColor="{StaticResource TextPrimary}"
-                BackgroundColor="{StaticResource AccentLight}" />
-            </VerticalStackLayout>
-        </Frame>
+                    <Picker x:Name="TablesPicker"
+                        Title="Таблица"
+                        TextColor="{StaticResource TextPrimary}"
+                        BackgroundColor="{StaticResource AccentLight}" />
+                </VerticalStackLayout>
+            </Frame>
 
-        <Button Grid.Row="1"
-            Text="Удалить все записи"
-            BackgroundColor="#E53935"
-            TextColor="White"
-            CornerRadius="6"
-            Padding="12,8"
-            HorizontalOptions="Center"
-            Clicked="OnDeleteAllClicked" />
+            <Button Text="Удалить все записи"
+                BackgroundColor="#E53935"
+                TextColor="White"
+                CornerRadius="6"
+                Padding="12,8"
+                HorizontalOptions="Center"
+                Clicked="OnDeleteAllClicked" />
 
-        <!-- Вот эта кнопка -->
-        <Button Grid.Row="2"
-            Text="Заполнить направления из JSON"
-            BackgroundColor="{StaticResource Primary}"
-            TextColor="White"
-            CornerRadius="6"
-            Padding="12,8"
-            HorizontalOptions="Center"
-            Clicked="OnSeedOrientationsClicked" />
-    </Grid>
+            <Button Text="Заполнить направления из JSON"
+                BackgroundColor="{StaticResource Primary}"
+                TextColor="White"
+                CornerRadius="6"
+                Padding="12,8"
+                HorizontalOptions="Center"
+                Clicked="OnSeedOrientationsClicked" />
+
+            <!-- Новый блок: настройки batch-генерации по страницам -->
+            <Frame BackgroundColor="{StaticResource CardBackground}"
+               CornerRadius="8"
+               Padding="12"
+               HasShadow="True">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Настройки генерации документов"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource TextPrimary}" />
+
+                    <Picker x:Name="PagePicker"
+                    Title="Страница"
+                    TextColor="{StaticResource TextPrimary}"
+                    BackgroundColor="{StaticResource AccentLight}"
+                    SelectedIndexChanged="OnPageSelected" />
+
+                    <HorizontalStackLayout Spacing="10"
+                                   VerticalOptions="Center">
+                        <Label Text="Массовая генерация"
+                     VerticalOptions="Center"
+                     TextColor="{StaticResource TextPrimary}" />
+                        <Switch x:Name="BatchSwitch" />
+                    </HorizontalStackLayout>
+
+                    <Button Text="Сохранить настройки"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="6"
+                    Padding="12,8"
+                    HorizontalOptions="Center"
+                    Clicked="OnSavePageSettingsClicked" />
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

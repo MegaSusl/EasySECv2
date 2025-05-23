@@ -31,7 +31,7 @@
     <ShellContent Title="Главная" ContentTemplate="{DataTemplate local:MainPage}" Shell.FlyoutItemIsVisible="True" />
 
     <FlyoutItem Title="Состав ГЭК" Icon="docs.png">
-        <ShellContent Title="Формирование состава ГЭК" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Формирование состава ГЭК" ContentTemplate="{DataTemplate views:SecCompositionPage}" Shell.FlyoutItemIsVisible="False" />
         <ShellContent Title="Замена членов" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
         <ShellContent Title="Замена секретаря" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="True" />
     </FlyoutItem>
@@ -53,7 +53,8 @@
     </FlyoutItem>
 
     <ShellContent Title="Студенты" ContentTemplate="{DataTemplate views:StudentsPage}" Shell.FlyoutItemIsVisible="True" />
-    <ShellContent Title="Персонал" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="True" />
+    <ShellContent Title="Персонал" ContentTemplate="{DataTemplate views:StaffPage}" Shell.FlyoutItemIsVisible="True" />
+    
     <FlyoutItem Title="Настройки" Icon="docs.png">
         <ShellContent Title="Общие" ContentTemplate="{DataTemplate views:SettingsPage}" Shell.FlyoutItemIsVisible="False" />
         <ShellContent Title="Таблица кафедр" ContentTemplate="{DataTemplate views:DepartmentPage}" Shell.FlyoutItemIsVisible="False" />

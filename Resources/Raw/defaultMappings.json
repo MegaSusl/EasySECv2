@@ -1,0 +1,26 @@
+﻿[
+  {
+    "Placeholder": "СТУДЕНТ",
+    "SourceType": "FromTable",
+    "SourceName": "Student",
+    "FilterProperty": "Group",
+    "FilterLookupSource": "Group",
+    "FilterLookupKey": "id",
+    "FilterLookupValue": "name",
+    "DisplayTemplate": "{LastName} {FirstName} {Patronymic} | {Group}"
+  },
+  {
+    "Placeholder": "КАФЕДРА",
+    "SourceType": "FromTable",
+    "SourceName": "Staff",
+    "FilterProperty": "Department",
+    "DisplayTemplate": "{LastName} {FirstName} | {Department}"
+  },
+  {
+    "Placeholder": "ДАТА_ЗАЩИТЫ",
+    "SourceType": "Manual",
+    "SourceName": "",
+    "FilterProperty": null,
+    "DisplayTemplate": null
+  }
+]

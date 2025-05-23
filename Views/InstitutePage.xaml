@@ -11,9 +11,9 @@
     <ContentPage.Resources>
         <DataTemplate x:Key="InstHeader">
             <Grid Padding="10" ColumnDefinitions="3*,2*,Auto">
-                <Label Text="Полное название" FontAttributes="Bold" />
-                <Label Text="Короткое"       FontAttributes="Bold" Grid.Column="1" />
-                <Label Text="Действия"       FontAttributes="Bold" Grid.Column="2" HorizontalOptions="End" />
+                <Label Text="Полное название" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+                <Label Text="Короткое"       FontAttributes="Bold" Grid.Column="1" TextColor="{StaticResource TextPrimary}"/>
+                <Label Text="Действия"       FontAttributes="Bold" Grid.Column="2" HorizontalOptions="End" TextColor="{StaticResource TextPrimary}"/>
             </Grid>
         </DataTemplate>
 
