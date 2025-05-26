@@ -4,9 +4,13 @@ namespace EasySECv2.Views;
 
 public partial class SecCompositionPage : ContentPage
 {
-    public SecCompositionPage(SecCompositionViewModel viewModel)
+    //public SecCompositionPage(SecCompositionViewModel viewModel)
+    //{
+    //    InitializeComponent();
+    //    BindingContext = viewModel;
+    //}
+    public SecCompositionPage()
     {
         InitializeComponent();
-        BindingContext = viewModel;
     }
 }

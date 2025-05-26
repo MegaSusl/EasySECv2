@@ -1,231 +1,80 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.AccessControl;
+﻿using EasySECv2.Models;
+using Microsoft.Maui.Storage;
 using System.Text.Json;
-using System.Threading.Tasks;
-using EasySECv2.Models;
-using EasySECv2.Models.DocumentTemplates;
-using EasySECv2.Services;
 
-namespace EasySECv2.Services
+namespace EasySECv2.Services;
+
+public interface ITemplateService
 {
-    public class TemplateService : ITemplateService
+    Task<IEnumerable<DocumentTemplate>> GetTemplatesAsync(string pageKey);
+    Task AddTemplateAsync(Stream fileStream, string originalFileName, string pageKey);
+    Task DeleteTemplateAsync(DocumentTemplate template);
+}
+
+public class TemplateService : ITemplateService
+{
+    private readonly string _templateFolder;
+    private readonly string _jsonPath;
+
+    public TemplateService()
     {
-        private readonly string _dataFolder;
-        private string _jsonPath => Path.Combine(_dataFolder, "templates.json");
-        private string _templatesDir => _dataFolder;
-        private readonly ITemplateParserService _parser;
-        private readonly IDefaultMappingService _defaults;
-        private readonly string _configPath = Path.Combine(FileSystem.AppDataDirectory, "Resources/Raw");
-        public TemplateService(
-            ITemplateParserService parser,
-            IDefaultMappingService defaults)
+        var basePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "EasySEC", "Templates"
+        );
+        Directory.CreateDirectory(basePath);
+        _templateFolder = basePath;
+        _jsonPath = Path.Combine(basePath, "templates.json");
+    }
+
+    public async Task<IEnumerable<DocumentTemplate>> GetTemplatesAsync(string pageKey)
+    {
+        var all = await LoadAllAsync();
+        return all.Where(t => t.PageKey == pageKey);
+    }
+
+    public async Task AddTemplateAsync(Stream fileStream, string originalFileName, string pageKey)
+    {
+        var uniqueName = Guid.NewGuid().ToString() + Path.GetExtension(originalFileName);
+        var targetPath = Path.Combine(_templateFolder, uniqueName);
+
+        using var file = File.Create(targetPath);
+        await fileStream.CopyToAsync(file);
+
+        var template = new DocumentTemplate
         {
-            _parser = parser ?? throw new ArgumentNullException(nameof(parser));
-            _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
+            Name = Path.GetFileNameWithoutExtension(originalFileName),
+            LocalPath = targetPath,
+            PageKey = pageKey,
+            Type = TemplateType.Individual,
+            Mappings = new List<PlaceholderMapping>() // пока пусто, добавляется вручную позже
+        };
 
-            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            _dataFolder = Path.Combine(docs, "EasySEC", "Templates");
-            Directory.CreateDirectory(_dataFolder);
+        var all = await LoadAllAsync();
+        all.Add(template);
+        await SaveAllAsync(all);
+    }
 
-            if (!File.Exists(_jsonPath))
-                File.WriteAllText(_jsonPath, "[]");
-        }
+    public async Task DeleteTemplateAsync(DocumentTemplate template)
+    {
+        if (File.Exists(template.LocalPath))
+            File.Delete(template.LocalPath);
 
-        public async Task<IEnumerable<DocumentTemplate>> GetTemplatesAsync(string pageKey)
-        {
-            var all = JsonSerializer.Deserialize<List<DocumentTemplate>>(
-                          await File.ReadAllTextAsync(_jsonPath))
-                      ?? new List<DocumentTemplate>();
+        var all = await LoadAllAsync();
+        all.RemoveAll(t => t.LocalPath == template.LocalPath);
+        await SaveAllAsync(all);
+    }
 
-            bool updated = false;
-            foreach (var tpl in all.Where(t => t.PageKey == pageKey))
-            {
-                // ——————————————————————————————————————————————
-                // 1) Если мэппингов нет, создаём их из шаблона
-                if (tpl.Mappings == null || !tpl.Mappings.Any())
-                {
-                    var names = _parser.ExtractPlaceholders(tpl.LocalPath);
-                    tpl.Mappings = names.Select(name => new PlaceholderMapping { Placeholder = name })
-                                    .ToList();
-                    updated = true;
-                }
+    private async Task<List<DocumentTemplate>> LoadAllAsync()
+    {
+        if (!File.Exists(_jsonPath)) return new List<DocumentTemplate>();
+        var json = await File.ReadAllTextAsync(_jsonPath);
+        return JsonSerializer.Deserialize<List<DocumentTemplate>>(json) ?? new();
+    }
 
-                // 2) Всегда подмешиваем дефолтные настройки (SourceType, SourceName, FilterProperty, DisplayTemplate)
-                foreach (var pm in tpl.Mappings)
-                {
-                    var dm = _defaults.Get(pm.Placeholder);
-                    if (dm != null)
-                    {
-                        pm.SourceType = dm.SourceType;
-                        pm.SourceName = dm.SourceName;
-                        pm.FilterProperty = dm.FilterProperty;
-                        pm.DisplayTemplate = dm.DisplayTemplate;
-                        updated = true;
-                    }
-                }
-            }
-
-            if (updated)
-            {
-                var options = new JsonSerializerOptions { WriteIndented = true };
-                await File.WriteAllTextAsync(_jsonPath, JsonSerializer.Serialize(all, options));
-            }
-
-            return all.Where(t => t.PageKey == pageKey);
-        }
-
-        public async Task AddOrUpdateAsync(string pageKey, string fileName, Stream docxStream)
-        {
-            var all = JsonSerializer.Deserialize<List<DocumentTemplate>>(
-                          await File.ReadAllTextAsync(_jsonPath))
-                      ?? new List<DocumentTemplate>();
-
-            var tpl = new DocumentTemplate
-            {
-                Id = Guid.NewGuid(),
-                PageKey = pageKey,
-                FileName = fileName
-            };
-            all.Add(tpl);
-
-            var target = Path.Combine(_templatesDir, $"{tpl.Id}.docx");
-            using (var fs = File.Create(target))
-            {
-                await docxStream.CopyToAsync(fs);
-            }
-            tpl.LocalPath = target;
-
-            var placeholders = _parser.ExtractPlaceholders(target);
-            tpl.Mappings = placeholders.Select(name =>
-            {
-                var pm = new PlaceholderMapping { Placeholder = name };
-                var dm = _defaults.Get(name);
-                if (dm != null)
-                {
-                    pm.SourceType = dm.SourceType;
-                    pm.SourceName = dm.SourceName;
-                    pm.FilterProperty = dm.FilterProperty;
-                    pm.DisplayTemplate = dm.DisplayTemplate;
-                }
-                return pm;
-            }).ToList();
-
-            await File.WriteAllTextAsync(_jsonPath,
-                JsonSerializer.Serialize(all, new JsonSerializerOptions { WriteIndented = true }));
-        }
-
-        public async Task UpdateAsync(Guid templateId, string fileName, Stream docxStream)
-        {
-            var all = JsonSerializer.Deserialize<List<DocumentTemplate>>(
-                          await File.ReadAllTextAsync(_jsonPath))
-                      ?? new List<DocumentTemplate>();
-
-            var tpl = all.FirstOrDefault(t => t.Id == templateId)
-                   ?? throw new InvalidOperationException("Шаблон не найден");
-
-            if (File.Exists(tpl.LocalPath))
-                File.Delete(tpl.LocalPath);
-
-            var target = Path.Combine(_templatesDir, $"{tpl.Id}.docx");
-            using (var fs = File.Create(target))
-            {
-                await docxStream.CopyToAsync(fs);
-            }
-
-            tpl.FileName = fileName;
-            tpl.LocalPath = target;
-
-            var placeholders = _parser.ExtractPlaceholders(target);
-            tpl.Mappings = placeholders.Select(name =>
-            {
-                var pm = new PlaceholderMapping { Placeholder = name };
-                var dm = _defaults.Get(name);
-                if (dm != null)
-                {
-                    pm.SourceType = dm.SourceType;
-                    pm.SourceName = dm.SourceName;
-                    pm.FilterProperty = dm.FilterProperty;
-                    pm.DisplayTemplate = dm.DisplayTemplate;
-                }
-                return pm;
-            }).ToList();
-
-            await File.WriteAllTextAsync(_jsonPath,
-                JsonSerializer.Serialize(all, new JsonSerializerOptions { WriteIndented = true }));
-        }
-
-        public async Task DeleteAsync(Guid templateId)
-        {
-            var all = JsonSerializer.Deserialize<List<DocumentTemplate>>(
-                          await File.ReadAllTextAsync(_jsonPath))
-                      ?? new List<DocumentTemplate>();
-
-            var tpl = all.FirstOrDefault(t => t.Id == templateId);
-            if (tpl != null)
-            {
-                if (File.Exists(tpl.LocalPath))
-                    File.Delete(tpl.LocalPath);
-                all.Remove(tpl);
-                await File.WriteAllTextAsync(_jsonPath,
-                    JsonSerializer.Serialize(all, new JsonSerializerOptions { WriteIndented = true }));
-            }
-        }
-        public async Task<TemplateConfig?> GetTemplateConfigAsync(string templateKey)
-        {
-            var file = Path.Combine(_configPath, "TemplateConfig.json");
-            if (!File.Exists(file)) return null;
-
-            var json = await File.ReadAllTextAsync(file);
-            var configs = JsonSerializer.Deserialize<List<TemplateConfig>>(json);
-            return configs?.FirstOrDefault(c => c.TemplateKey == templateKey);
-        }
-
-        public async Task<List<PlaceholderMapping>> GetMappingsAsync(string templateKey, string templatePath)
-        {
-            // 1) Извлечь все маркеры из .docx
-            var extracted = _parser.ExtractPlaceholders(templatePath);
-
-            // 2) Загрузить дефолты из конфига
-            var config = await GetTemplateConfigAsync(templateKey);
-            var defaults = config?.Placeholders.ToDictionary(p => p.Name)
-                                 ?? new Dictionary<string, PlaceholderDefinition>();
-
-            // 3) Сформировать мэппинги
-            var mappings = extracted.Select(name =>
-            {
-                // Создаем базовый mapping
-                var mapping = new PlaceholderMapping
-                {
-                    Placeholder = name
-                };
-
-                if (defaults.TryGetValue(name, out var def))
-                {
-                    // Устанавливаем тип источника
-                    mapping.SourceType = def.Type switch
-                    {
-                        "Composite" => MappingSourceType.Composite,
-                        "FromTable" => MappingSourceType.FromTable,
-                        _ => MappingSourceType.Manual
-                    };
-                    // Дополнительные параметры
-                    mapping.DisplayTemplate = def.DisplayTemplate;
-                    mapping.TableName = def.TableName;
-                    mapping.FilterProperties = def.FilterProperties ?? new List<string>();
-                }
-                else
-                {
-                    mapping.SourceType = MappingSourceType.Manual;
-                }
-
-                return mapping;
-            })
-            .ToList();
-
-            return mappings;
-        }
+    private async Task SaveAllAsync(List<DocumentTemplate> templates)
+    {
+        var json = JsonSerializer.Serialize(templates, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(_jsonPath, json);
     }
 }

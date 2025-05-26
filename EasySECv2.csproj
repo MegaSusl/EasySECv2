@@ -90,40 +90,43 @@
 	  <MauiXaml Update="PlaceholderPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\DepartmentPage.xaml">
+	  <MauiXaml Update="Views\BatchCertificatePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\EditDepartmentPage.xaml">
+	  <MauiXaml Update="Views\TablePages\DepartmentPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\EditFormOfEducationPage.xaml">
+	  <MauiXaml Update="Views\EditPages\EditDepartmentPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\EditInstitutePage.xaml">
+	  <MauiXaml Update="Views\EditPages\EditFormOfEducationPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\EditOrientationPage.xaml">
+	  <MauiXaml Update="Views\EditPages\EditInstitutePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\EditStaffPage.xaml">
+	  <MauiXaml Update="Views\EditPages\EditOrientationPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\EditStudentPage.xaml">
+	  <MauiXaml Update="Views\EditPages\EditStaffPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\EditPages\EditStudentPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\FieldMappingControl.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\FormOfEducationPage.xaml">
+	  <MauiXaml Update="Views\TablePages\FormOfEducationPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\GenericEditPage.xaml">
+	  <MauiXaml Update="Views\TablePages\GenericEditPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\InstitutePage.xaml">
+	  <MauiXaml Update="Views\TablePages\InstitutePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\OrientationPage.xaml">
+	  <MauiXaml Update="Views\TablePages\OrientationPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\SecCompositionPage.xaml">
@@ -132,10 +135,10 @@
 	  <MauiXaml Update="Views\SettingsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\StaffPage.xaml">
+	  <MauiXaml Update="Views\TablePages\StaffPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\StudentsPage.xaml">
+	  <MauiXaml Update="Views\TablePages\StudentsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

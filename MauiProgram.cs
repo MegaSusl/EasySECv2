@@ -11,11 +11,13 @@ using EasySECv2.ViewModels;
 using EasySECv2.Models;
 using SQLite;
 using CommunityToolkit.Maui;
+using EasySECv2.WinUI;
 
 namespace EasySECv2
 {
     public static class MauiProgram
     {
+        public static IServiceProvider Services { get; private set; }
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
@@ -46,7 +48,7 @@ namespace EasySECv2
                 Directory.CreateDirectory(templatesFolder);
                 return new DatabaseService(dbPath);
             });
-            builder.Services.AddSingleton<ITemplateService, TemplateService>();
+            
 
             //
             // 2) Помощник для Excel-импорта
@@ -145,20 +147,22 @@ namespace EasySECv2
             Routing.RegisterRoute(nameof(EditStaffPage), typeof(EditStaffPage));
             //Routing.RegisterRoute(nameof(GenericEditPage), typeof(GenericEditPage));
 
-            builder.Services.AddSingleton<ITemplateService, TemplateService>();
             builder.Services.AddTransient<SecCompositionViewModel>();
             builder.Services.AddTransient<SecCompositionPage>();
 
             // Сначала регистрируем парсер
-            builder.Services.AddSingleton<ITemplateParserService, TemplateParserService>();
             // А затем сервис, который его использует
-            builder.Services.AddSingleton<ITemplateService, TemplateService>();
             builder.Services.AddSingleton<IFolderPickerService, FolderPickerService>();
-            builder.Services.AddTransient<IDocumentGenerationService, DocumentGenerationService>();
             builder.Services.AddSingleton<IPageSettingsService, PageSettingsService>();
-            builder.Services.AddSingleton<IDefaultMappingService, DefaultMappingService>();
+            builder.Services.AddSingleton<IDocumentGenerationService, DocumentGenerationService>();
+            builder.Services.AddSingleton<ITemplateService, TemplateService>();
 
-            return builder.Build();
+            var app = builder.Build();
+
+            Services = app.Services;
+
+            return app;
         }
+        public static T GetService<T>() where T : notnull => Services.GetRequiredService<T>();
     }
 }

@@ -55,5 +55,14 @@ namespace EasySECv2.Models
         public string phone { get; set; }
         [Ignore]
         public string GroupName { get; set; }
+        public string GetPropertyValue(string? property)
+        {
+            return property switch
+            {
+                "ФИО" => FullName,
+                "ГРУППА" => GroupName,
+                _ => string.Empty
+            };
+        }
     }
 }

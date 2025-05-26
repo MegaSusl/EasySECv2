@@ -1,0 +1,47 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:EasySECv2.ViewModels"
+             x:Class="EasySECv2.Views.BatchCertificatePage">
+    <ContentPage.BindingContext>
+        <viewmodels:BatchCertificateViewModel />
+    </ContentPage.BindingContext>
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="16">
+            <Label Text="Выбор шаблона:" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+            <Picker ItemsSource="{Binding Templates}"
+                ItemDisplayBinding="{Binding Name}"
+                SelectedItem="{Binding SelectedTemplate}" />
+
+            <HorizontalStackLayout Spacing="12">
+                <Button Text="Добавить шаблон" Command="{Binding AddTemplateCommand}" />
+                <Button Text="Удалить" Command="{Binding DeleteTemplateCommand}" IsEnabled="{Binding SelectedTemplate}" />
+            </HorizontalStackLayout>
+
+            <Label Text="Поиск по ФИО:" TextColor="{StaticResource TextPrimary}"/>
+            <SearchBar Placeholder="Введите имя..." Text="{Binding SearchQuery}" />
+
+            <Label Text="Выбор группы студентов:" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+            <Picker ItemsSource="{Binding Groups}"
+                    ItemDisplayBinding="{Binding name}"
+                    SelectedItem="{Binding SelectedGroup}"/>
+
+            <Label Text="Список студентов (отметьте нужных):" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+            <CollectionView ItemsSource="{Binding FilteredStudents}" HeightRequest="300">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <StackLayout Orientation="Horizontal" Spacing="12">
+                            <CheckBox IsChecked="{Binding IsSelected}" />
+                            <Label Text="{Binding FullName}" VerticalOptions="Center" TextColor="{StaticResource TextPrimary}"/>
+                        </StackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Text="Выбрать папку сохранения" Command="{Binding SelectFolderCommand}" />
+            <Label Text="{Binding OutputFolder}" FontSize="12" LineBreakMode="WordWrap" TextColor="{StaticResource TextPrimary}"/>
+
+            <Button Text="Сгенерировать справки (отмеченные)" Command="{Binding GenerateCommand}" IsEnabled="{Binding CanGenerate}" />
+            <Button Text="Сгенерировать справки для всей группы" Command="{Binding GenerateGroupCommand}" IsEnabled="{Binding CanGenerateGroup}" />
+        </StackLayout>
+    </ScrollView>
+</ContentPage>

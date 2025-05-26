@@ -1,156 +1,87 @@
-﻿using System;
+﻿using EasySECv2.Models;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using EasySECv2.Models;
-using EasySECv2.Models.DocumentTemplates;
-using EasySECv2.Services;
-using EasySECv2.ViewModels;
-using Xceed.Document.NET;
 using Xceed.Words.NET;
+using Xceed.Document.NET;
 
 namespace EasySECv2.Services
 {
-    /// <summary>
-    /// Генерация документа из шаблона: замена маркеров и сохранение в указанную папку.
-    /// Поддерживается композитная подстановка через DisplayTemplate из конфигурации.
-    /// </summary>
     public class DocumentGenerationService : IDocumentGenerationService
     {
-        private readonly ITemplateService _templateService;
-        private static readonly Regex PlaceholderRx = new(@"\[([A-Za-z0-9_:]+)\]");
-
-        public DocumentGenerationService(ITemplateService templateService)
+        public async Task GenerateBatchAsync(DocumentTemplate template, List<Student> students, Dictionary<string, string> manualInputs, string outputDir)
         {
-            _templateService = templateService;
-        }
-
-        public async Task GenerateBatchAsync(
-            DocumentTemplate tpl,
-            IEnumerable<IDictionary<string, object?>> items,
-            string outputFolder)
-        {
-            if (!File.Exists(tpl.LocalPath))
-                throw new FileNotFoundException(tpl.LocalPath);
-            Directory.CreateDirectory(outputFolder);
-
-            // Загружаем конфигурацию шаблона для композитных маркеров
-            var config = await _templateService.GetTemplateConfigAsync(tpl.PageKey);
-            var defs = config?.Placeholders
-                .ToDictionary(p => p.Name, p => p)
-                ?? new Dictionary<string, PlaceholderDefinition>();
-
-            foreach (var values in items)
+            foreach (var student in students)
             {
-                using var doc = DocX.Load(tpl.LocalPath);
+                var map = BuildMap(template.Mappings, student, manualInputs);
+                using var doc = DocX.Load(template.LocalPath);
 
-                // Заменяем маркеры
-                foreach (var kv in values)
+                foreach (var p in doc.Paragraphs.ToList())
                 {
-                    var placeholderKey = kv.Key; // e.g. "[СТУДЕНТ]"
-                    var nameMatch = PlaceholderRx.Match(placeholderKey);
-                    var name = nameMatch.Success ? nameMatch.Groups[1].Value : string.Empty;
-                    defs.TryGetValue(name, out var def);
-
-                    string replacement;
-                    if (def != null && def.Type == "Composite" && kv.Value != null)
+                    if (p.Text.Contains("[СТУДЕНТ:ФИО]"))
                     {
-                        replacement = FormatDisplay(def.DisplayTemplate!, kv.Value);
+                        p.ReplaceText("[СТУДЕНТ:ФИО]", "");
+                        p.Append(student.FullName);
                     }
-                    else
-                    {
-                        replacement = kv.Value?.ToString() ?? string.Empty;
-                    }
-
-                    doc.ReplaceText(
-                        placeholderKey,
-                        replacement,
-                        false,
-                        RegexOptions.None,
-                        null,
-                        null,
-                        MatchFormattingOptions.SubsetMatch);
                 }
 
-                // Формируем имя файла
-                var keyPart = values.ContainsKey("[ИД]")
-                              ? values["[ИД]"]
-                              : Guid.NewGuid();
-                var outName = Path.GetFileNameWithoutExtension(tpl.FileName)
-                              + "_" + keyPart
-                              + Path.GetExtension(tpl.FileName);
-                var outPath = Path.Combine(outputFolder, outName!);
+                foreach (var kvp in map)
+                {
+                    if (kvp.Key != "СТУДЕНТ:ФИО")
+                        doc.ReplaceText($"[{kvp.Key}]", kvp.Value ?? "");
+                }
 
-                doc.SaveAs(outPath);
+                var fileName = $"{student.surname}_{template.Name}.docx";
+                doc.SaveAs(Path.Combine(outputDir, fileName));
             }
         }
 
-        public async Task GenerateAsync(
-            DocumentTemplate tpl,
-            IDictionary<string, object?> values,
-            string outputFolder)
+        public async Task GenerateTabularAsync(DocumentTemplate template, Group group, List<Student> students, Dictionary<string, string> manualInputs, string outputDir)
         {
-            if (!File.Exists(tpl.LocalPath))
-                throw new FileNotFoundException("Шаблон не найден", tpl.LocalPath);
-            Directory.CreateDirectory(outputFolder);
+            var doc = DocX.Load(template.LocalPath);
+            var table = doc.Tables.FirstOrDefault();
+            if (table == null) return;
 
-            // Загружаем конфигурацию для композитных маркеров
-            var config = await _templateService.GetTemplateConfigAsync(tpl.PageKey);
-            var defs = config?.Placeholders
-                .ToDictionary(p => p.Name, p => p)
-                ?? new Dictionary<string, PlaceholderDefinition>();
-
-            using var document = DocX.Load(tpl.LocalPath);
-
-            foreach (var kv in values)
+            for (int i = 0; i < students.Count; i++)
             {
-                var placeholderKey = kv.Key;
-                var nameMatch = PlaceholderRx.Match(placeholderKey);
-                var name = nameMatch.Success ? nameMatch.Groups[1].Value : string.Empty;
-                defs.TryGetValue(name, out var def);
-
-                string replacement;
-                if (def != null && def.Type == "Composite" && kv.Value != null)
-                {
-                    replacement = FormatDisplay(def.DisplayTemplate!, kv.Value);
-                }
-                else
-                {
-                    replacement = kv.Value?.ToString() ?? string.Empty;
-                }
-
-                document.ReplaceText(
-                    placeholderKey,
-                    replacement,
-                    false,
-                    RegexOptions.None,
-                    null,
-                    null,
-                    MatchFormattingOptions.SubsetMatch);
+                var row = table.InsertRow();
+                row.ReplaceText("[СТУДЕНТ:ФИО]", students[i].FullName);
+                row.ReplaceText("[INDEX]", (i + 1).ToString());
             }
 
-            var outFileName = tpl.FileName;
-            var outPath = Path.Combine(outputFolder, outFileName);
+            foreach (var kvp in manualInputs)
+                doc.ReplaceText($"[{kvp.Key}]", kvp.Value);
 
-            document.SaveAs(outPath);
+            doc.SaveAs(Path.Combine(outputDir, $"{group.name}_{template.Name}.docx"));
         }
 
-        /// <summary>
-        /// Форматирует объект item в строку согласно шаблону вида "{Prop1} {Prop2}".
-        /// </summary>
-        private string FormatDisplay(string template, object item)
+        private Dictionary<string, string> BuildMap(List<PlaceholderMapping> mappings, Student student, Dictionary<string, string> manual)
         {
-            var result = template;
-            var props = item.GetType().GetProperties();
-            foreach (var prop in props)
+            var map = new Dictionary<string, string>();
+            foreach (var m in mappings)
             {
-                var placeholder = "{" + prop.Name + "}";
-                var propVal = prop.GetValue(item)?.ToString() ?? string.Empty;
-                result = result.Replace(placeholder, propVal);
+                string value = m.SourceType switch
+                {
+                    MappingSourceType.Manual => manual.GetValueOrDefault(m.Placeholder, string.Empty),
+                    MappingSourceType.Student => student.GetPropertyValue(m.Property) ?? string.Empty,
+                    MappingSourceType.Calculated => GetCalculatedValue(m.Placeholder),
+                    _ => string.Empty
+                };
+                map[m.Placeholder] = value;
             }
-            return result;
+            return map;
+        }
+
+        private string GetCalculatedValue(string placeholder)
+        {
+            return placeholder switch
+            {
+                "МЕСЯЦ" => DateTime.Now.ToString("MMMM", new CultureInfo("ru-RU")),
+                _ => string.Empty
+            };
         }
     }
 }
