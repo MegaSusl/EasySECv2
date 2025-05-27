@@ -75,7 +75,27 @@
                     Clicked="OnSavePageSettingsClicked" />
                 </VerticalStackLayout>
             </Frame>
+            <BoxView HeightRequest="1" BackgroundColor="Gray" />
 
+            <Label Text="Маркеры по умолчанию:" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+            <CollectionView x:Name="MappingsEditor" ItemsSource="{Binding GlobalMappings}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <StackLayout Orientation="Vertical" Padding="5">
+                            <Label Text="Маркер" TextColor="{StaticResource TextPrimary}"/>
+                            <Entry Text="{Binding Placeholder}" />
+
+                            <Label Text="Источник" TextColor="{StaticResource TextPrimary}"/>
+                            <Picker ItemsSource="{Binding BindingContext.SourceTypes, Source={x:Reference MappingsEditor}}" SelectedItem="{Binding SourceType}" />
+
+                            <Label Text="Свойство (если нужно)" TextColor="{StaticResource TextPrimary}"/>
+                            <Entry Text="{Binding Property}" />
+                        </StackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Text="Сохранить маркеры" Clicked="OnSaveMappingsClicked" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

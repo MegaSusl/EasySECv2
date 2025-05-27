@@ -1,0 +1,45 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:EasySECv2.ViewModels"
+             x:Class="EasySECv2.Views.ProtocolPage">
+    <ContentPage.BindingContext>
+        <viewmodels:ProtocolViewModel />
+    </ContentPage.BindingContext>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <Label Text="Шаблоны протоколов" FontSize="18" FontAttributes="Bold" />
+
+            <Picker ItemsSource="{Binding Templates}"
+                    ItemDisplayBinding="{Binding Name}"
+                    SelectedItem="{Binding SelectedTemplate}" />
+
+            <HorizontalStackLayout Spacing="12">
+                <Button Text="Добавить шаблон" Command="{Binding AddTemplateCommand}" />
+                <Button Text="Удалить шаблон" Command="{Binding DeleteTemplateCommand}" IsEnabled="{Binding CanDeleteTemplate}" />
+            </HorizontalStackLayout>
+
+            <Label Text="Папка сохранения документов:" FontAttributes="Bold" />
+            <Button Text="Выбрать папку" Command="{Binding SelectFolderCommand}" />
+            <Label Text="{Binding OutputFolder}" FontSize="12" LineBreakMode="WordWrap" />
+
+            <Label Text="Поиск студентов:" />
+            <SearchBar Placeholder="Введите ФИО" Text="{Binding SearchQuery}" />
+
+            <Label Text="Допущенные студенты" FontAttributes="Bold" />
+            <CollectionView ItemsSource="{Binding FilteredStudents}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <HorizontalStackLayout Spacing="12" IsVisible="{Binding IsVisible}">
+                            <Label Text="{Binding Student.FullName}" VerticalOptions="Center" />
+                            <Button Text="Сгенерировать протокол"
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ProtocolViewModel}}, Path=GenerateCommand}"
+                                    CommandParameter="{Binding Student}"
+                                    IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ProtocolViewModel}}, Path=CanGenerate}" />
+                        </HorizontalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

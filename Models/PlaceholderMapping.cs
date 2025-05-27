@@ -15,9 +15,12 @@ namespace EasySECv2.Models
     public enum MappingSourceType
     {
         Manual,     // ручной ввод
+        ManualText,  // длинный текст — Editor
+        ManualDate,  // DatePicker
         Student,    // данные из таблицы студентов
         Group,      // данные из таблицы групп
         Calculated, // текущая дата, месяц и т.п.
         Table       // выбор произвольной таблицы
     }
+
 }

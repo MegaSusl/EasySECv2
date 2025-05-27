@@ -169,4 +169,12 @@
         <Setter Property="HasShadow" Value="False"/>
         <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
     </Style>
+
+    <Style x:Key="FormCheckBoxStyle" TargetType="CheckBox">
+        <Setter Property="HorizontalOptions" Value="Start"/>
+    </Style>
+
+    <Style x:Key="FormDatePickerStyle" TargetType="DatePicker">
+        <Setter Property="HorizontalOptions" Value="Fill"/>
+    </Style>
 </ResourceDictionary>

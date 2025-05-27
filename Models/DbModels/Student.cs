@@ -42,6 +42,14 @@ namespace EasySECv2.Models
         [Indexed]
         [Editable("Кафедра", Order = 50, ControlType = "Picker")]
         public long department { get; set; }
+        
+        [Indexed]
+        [Editable("Допущен к защите", Order = 60, ControlType = "CheckBox")]
+        public bool isAccessed { get; set; }
+
+        [Indexed]
+        [Editable("Дата выпуска", Order = 70, ControlType = "DatePicker")]
+        public DateTime? ReleaseYear { get; set; }
     }
     public partial class Student
     {

@@ -15,8 +15,8 @@ namespace EasySECv2.Services
 
         public PageSettingsService()
         {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var folder = Path.Combine(appData, "EasySEC", "Templates");
+            var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var folder = Path.Combine(documents, "EasySEC", "Templates");
             Directory.CreateDirectory(folder);
             _jsonPath = Path.Combine(folder, "pageSettings.json");
 

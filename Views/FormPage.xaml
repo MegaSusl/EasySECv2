@@ -1,0 +1,42 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:EasySECv2.ViewModels"
+             x:Class="EasySECv2.Views.FormPage">
+
+    <ContentPage.BindingContext>
+        <viewmodels:FormViewModel />
+    </ContentPage.BindingContext>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <Label Text="Заполните данные для генерации документа:" FontSize="20" FontAttributes="Bold" />
+
+            <CollectionView ItemsSource="{Binding Fields}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <VerticalStackLayout>
+                            <Label Text="{Binding DisplayName}" FontAttributes="Bold" />
+
+                            <!-- Entry для Manual -->
+                            <Entry Text="{Binding Value}" Placeholder="Введите значение" 
+                                   IsVisible="{Binding IsEntry}" />
+
+                            <!-- Editor для ManualText -->
+                            <Editor Text="{Binding Value}" Placeholder="Введите текст..." AutoSize="TextChanges" 
+                                    IsVisible="{Binding IsEditor}" HeightRequest="100" />
+
+                            <!-- DatePicker для ManualDate -->
+                            <DatePicker Date="{Binding DateValue}" IsVisible="{Binding IsDate}" />
+
+                            <!-- Picker для таблиц -->
+                            <Picker ItemsSource="{Binding Options}" SelectedItem="{Binding Value}"
+                                    IsVisible="{Binding IsPicker}" />
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Text="Продолжить" Command="{Binding SubmitCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

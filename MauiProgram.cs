@@ -157,6 +157,9 @@ namespace EasySECv2
             builder.Services.AddSingleton<IDocumentGenerationService, DocumentGenerationService>();
             builder.Services.AddSingleton<ITemplateService, TemplateService>();
 
+            builder.Services.AddTransient<ProtocolViewModel>();
+            builder.Services.AddTransient<ProtocolPage>();
+
             var app = builder.Build();
 
             Services = app.Services;

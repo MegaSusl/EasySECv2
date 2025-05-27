@@ -47,7 +47,7 @@
     </FlyoutItem>
 
     <FlyoutItem Title="Заседание" Icon="docs.png">
-        <ShellContent Title="Протокол" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Протокол" ContentTemplate="{DataTemplate views:ProtocolPage}" Shell.FlyoutItemIsVisible="False" />
         <ShellContent Title="Отчет" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
         <ShellContent Title="Справки" ContentTemplate="{DataTemplate views:BatchCertificatePage}" Shell.FlyoutItemIsVisible="False" />
     </FlyoutItem>
