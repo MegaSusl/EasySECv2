@@ -9,17 +9,17 @@
 
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="16">
-            <Label Text="Заполните данные для генерации документа:" FontSize="20" FontAttributes="Bold" />
+            <Label Text="Заполните данные для генерации документа:" FontSize="20" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
 
             <CollectionView ItemsSource="{Binding Fields}" SelectionMode="None">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <VerticalStackLayout>
-                            <Label Text="{Binding DisplayName}" FontAttributes="Bold" />
+                            <Label Text="{Binding DisplayName}" Margin="2, 4" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
 
                             <!-- Entry для Manual -->
                             <Entry Text="{Binding Value}" Placeholder="Введите значение" 
-                                   IsVisible="{Binding IsEntry}" />
+                                   IsVisible="{Binding IsEntry}" Margin="0, 0, 20, 0"/>
 
                             <!-- Editor для ManualText -->
                             <Editor Text="{Binding Value}" Placeholder="Введите текст..." AutoSize="TextChanges" 
