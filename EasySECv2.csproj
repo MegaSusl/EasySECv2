@@ -70,6 +70,7 @@
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Maui" Version="11.2.0" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<PackageReference Include="DateTimePicker.MAUI" Version="1.0.0" />
 		<PackageReference Include="DocX" Version="4.0.25105.5786" />
 		<PackageReference Include="ExcelDataReader" Version="3.7.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.70" />
@@ -93,10 +94,19 @@
 	  <MauiXaml Update="Views\BatchCertificatePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="Views\FamiliarizationPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Views\FormPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\ProtocolPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\SecMemberReplacementPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\SecSecretaryReplacementPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\TablePages\DepartmentPage.xaml">

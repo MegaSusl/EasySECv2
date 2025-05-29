@@ -11,16 +11,25 @@ namespace EasySECv2.Models
         public string Placeholder { get; set; } = string.Empty;
         public MappingSourceType SourceType { get; set; }
         public string? Property { get; set; } // напр. ФИО, ГРУППА и т.п.
+        public string? Format { get; set; }
+        public int? ManualMinLines { get; set; }
     }
     public enum MappingSourceType
     {
         Manual,     // ручной ввод
         ManualText,  // длинный текст — Editor
+        ManualTimeFull,  // время пикер
         ManualDate,  // DatePicker
-        Student,    // данные из таблицы студентов
         Group,      // данные из таблицы групп
         Calculated, // текущая дата, месяц и т.п.
-        Table       // выбор произвольной таблицы
+        Table,       // выбор произвольной таблицы
+
+        FormOfEducation,
+        Institute,
+        Orientation,
+        Department,
+        Staff,
+        Student,    // данные из таблицы студентов
     }
 
 }

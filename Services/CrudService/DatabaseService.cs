@@ -239,5 +239,71 @@ namespace EasySECv2.Services
                     return new List<object>();
             }
         }
+
+        /* -----------------------------------------------------------------
+         *  📄  Дополнительные методы для FamiliarizationPage и будущих CRUD
+         * ----------------------------------------------------------------*/
+
+        // ---------- Группы и студенты ----------
+        #region Groups & Students
+
+        /// <summary>
+        /// Все группы (удобный псевдоним для уже имеющегося GetAllGroupsAsync)
+        /// </summary>
+        public Task<List<Group>> GetGroupsAsync()
+            => GetAllGroupsAsync();
+
+        /// <summary>
+        /// Студенты выбранной группы
+        /// </summary>
+        public Task<List<Student>> GetStudentsByGroupAsync(long groupId)
+            => _database.Table<Student>()
+                        .Where(s => s.groupId == groupId)
+                        .ToListAsync();
+
+        /// <summary>
+        /// Студенты нескольких групп (для пакетной генерации документов)
+        /// </summary>
+        public Task<List<Student>> GetStudentsByGroupsAsync(IEnumerable<long> groupIds)
+            => _database.Table<Student>()
+                        .Where(s => groupIds.Contains(s.groupId))
+                        .ToListAsync();
+
+        #endregion
+
+
+        // ---------- Должности персонала ----------
+        #region Positions
+
+        public Task<List<Position>> GetAllPositionsAsync()
+            => _database.Table<Position>().ToListAsync();
+
+        public Task SavePositionAsync(Position p)
+            => p.id == 0
+                ? _database.InsertAsync(p)
+                : _database.UpdateAsync(p);
+
+        public Task DeletePositionAsync(Position p)
+            => _database.DeleteAsync(p);
+
+        #endregion
+
+
+        // ---------- Выпускные квалификационные работы ----------
+        #region FinalQualifyingWork
+
+        public Task<List<FinalQualifyingWork>> GetAllFinalQualifyingWorksAsync()
+            => _database.Table<FinalQualifyingWork>().ToListAsync();
+
+        public Task SaveFinalQualifyingWorkAsync(FinalQualifyingWork w)
+            => w.id == 0
+                ? _database.InsertAsync(w)
+                : _database.UpdateAsync(w);
+
+        public Task DeleteFinalQualifyingWorkAsync(FinalQualifyingWork w)
+            => _database.DeleteAsync(w);
+
+        #endregion
+
     }
 }

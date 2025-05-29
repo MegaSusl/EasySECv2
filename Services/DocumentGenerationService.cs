@@ -7,36 +7,244 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xceed.Words.NET;
 using Xceed.Document.NET;
+using System.Diagnostics;
+using EasySECv2.Services;
+using System.Text.RegularExpressions;
+using Group = EasySECv2.Models.Group;
+using Border = Xceed.Document.NET.Border;
 
 namespace EasySECv2.Services
 {
     public class DocumentGenerationService : IDocumentGenerationService
     {
-        public async Task GenerateBatchAsync(DocumentTemplate template, List<Student> students, Dictionary<string, string> manualInputs, string outputDir)
+        private readonly DatabaseService _db;
+        private List<string> SplitByMaxLength(string input, int maxLength)
         {
-            foreach (var student in students)
-            {
-                var map = BuildMap(template.Mappings, student, manualInputs);
-                using var doc = DocX.Load(template.LocalPath);
+            var result = new List<string>();
 
-                foreach (var p in doc.Paragraphs.ToList())
+            while (input.Length > maxLength)
+            {
+                int breakIndex = input.LastIndexOf(' ', maxLength);
+
+                if (breakIndex <= 0) breakIndex = maxLength;
+
+                result.Add(input.Substring(0, breakIndex).Trim());
+                input = input.Substring(breakIndex).Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(input))
+                result.Add(input);
+
+            return result;
+        }
+
+        public async Task GenerateDocumentsAsync(DocumentTemplate template, IEnumerable<object> dataContexts, Dictionary<string, string> manualInputs, string outputDir)
+        {
+            Debug.WriteLine($"[Генерация] Шаблон: {template.Name} ({template.LocalPath})");
+            Debug.WriteLine($"[Генерация] Кол-во объектов: {dataContexts.Count()}");
+            Debug.WriteLine($"[Генерация] Выходная папка: {outputDir}");
+
+            foreach (var data in dataContexts)
+            {
+                try
                 {
-                    if (p.Text.Contains("[СТУДЕНТ:ФИО]"))
+                    var map = await BuildMap(template.Mappings, data, manualInputs, _db);
+                    using var doc = DocX.Load(template.LocalPath);
+
+                    // Спец-обработка для студента
+                    if (data is Student student && doc.Text.Contains("[СТУДЕНТ:ФИО]"))
                     {
-                        p.ReplaceText("[СТУДЕНТ:ФИО]", "");
-                        p.Append(student.FullName);
+                        foreach (var p in doc.Paragraphs.ToList())
+                        {
+                            if (p.Text.Contains("[СТУДЕНТ:ФИО]"))
+                            {
+                                p.ReplaceText("[СТУДЕНТ:ФИО]", "");
+                                p.Append(student.FullName);
+                            }
+                        }
+                    }
+
+                    var replacements = new Dictionary<string, string>();
+                    var tables = new Dictionary<string, Table>();
+
+                    foreach (var mapping in template.Mappings)
+                    {
+                        var key = mapping.Placeholder;
+                        var value = map.GetValueOrDefault(key, "");
+
+                        if (mapping.SourceType == MappingSourceType.ManualText)
+                        {
+                            var normalized = value.Replace("\r\n", "\n").Replace('\r', '\n');
+                            var lines = normalized
+                                .Split('\n', StringSplitOptions.None)
+                                .SelectMany(line => SplitByMaxLength(line, 50))
+                                .ToList();
+
+                            int minLines = 0;
+                            if (manualInputs.TryGetValue($"{key}__min", out var minVal))
+                                int.TryParse(minVal, out minLines);
+                            while (lines.Count < minLines)
+                                lines.Add("");
+
+                            if (lines.Count == 0)
+                                continue; // или return;
+
+                            var table = doc.AddTable(lines.Count, 1);
+                            table.Alignment = Alignment.left;
+                            var noBorder = new Xceed.Document.NET.Border(BorderStyle.Tcbs_none, 0, 0, Xceed.Drawing.Color.White);
+                            var bottomBorder = new Border(BorderStyle.Tcbs_single, BorderSize.one, 0, Xceed.Drawing.Color.Black);
+
+                            for (int i = 0; i < lines.Count; i++)
+                            {
+                                var cell = table.Rows[i].Cells[0];
+                                var cellPara = cell.Paragraphs.FirstOrDefault() ?? cell.InsertParagraph();
+                                cellPara.Append(lines[i].Trim()).Font("Times New Roman").FontSize(14);
+                                cell.SetBorder(TableCellBorderType.Top, noBorder);
+                                cell.SetBorder(TableCellBorderType.Left, noBorder);
+                                cell.SetBorder(TableCellBorderType.Right, noBorder);
+                                cell.SetBorder(TableCellBorderType.InsideH, noBorder);
+                                cell.SetBorder(TableCellBorderType.InsideV, noBorder);
+                                cell.SetBorder(TableCellBorderType.Bottom, bottomBorder);
+                            }
+
+                            tables[key] = table;
+                        }
+                        else if (mapping.SourceType == MappingSourceType.Group && data is Group group)
+                        {
+                            var students = await _db.GetStudentsByGroupAsync(group.id);
+                            var table = doc.AddTable(students.Count + 1, 3);
+                            table.Alignment = Alignment.center;
+                            table.SetWidths(new float[] { 100f, 300f, 200f });
+
+                            if (students == null || students.Count == 0)
+                                continue; // пропускаем эту группу
+
+                            var headers = new[] { "№ п/п", "ФИО", "Подпись, дата" };
+                            for (int i = 0; i < 3; i++)
+                            {
+                                var cell = table.Rows[0].Cells[i];
+                                var para = cell.Paragraphs.FirstOrDefault() ?? cell.InsertParagraph();
+                                para.Append(headers[i]).Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+                                cell.VerticalAlignment = Xceed.Document.NET.VerticalAlignment.Center;
+                                cell.MarginTop = 5;
+                                cell.MarginBottom = 5;
+                            }
+
+                            for (int i = 0; i < students.Count; i++)
+                            {
+                                var row = table.Rows[i + 1];
+                                row.MinHeight = 20;
+                                row.Cells[0].Paragraphs[0].Append((i + 1).ToString()).Font("Times New Roman").FontSize(14);
+                                row.Cells[1].Paragraphs[0].Append(students[i].FullName).Font("Times New Roman").FontSize(14);
+                                row.Cells[2].Paragraphs[0].Append("").Font("Times New Roman").FontSize(14);
+
+                                foreach (var cell in row.Cells)
+                                {
+                                    cell.VerticalAlignment = Xceed.Document.NET.VerticalAlignment.Center;
+                                    cell.MarginTop = 5;
+                                    cell.MarginBottom = 5;
+                                }
+                            }
+
+                            tables[key] = table;
+                        }
+                        else
+                        {
+                            replacements[key] = value;
+                        }
+                    }
+
+                    // Один проход по всем параграфам и таблицам
+                    ReplaceAllSmart(doc, replacements, tables);
+
+
+                    var fileName = GetFileName(data, template.Name);
+                    var outputPath = Path.Combine(outputDir, fileName);
+
+                    if (File.Exists(outputPath))
+                    {
+                        bool overwrite = await MainThread.InvokeOnMainThreadAsync(() =>
+                            Application.Current.MainPage.DisplayAlert(
+                                "Файл уже существует",
+                                $"Файл {fileName} уже есть. Перезаписать?",
+                                "Да", "Нет"
+                            )
+                        );
+
+                        if (!overwrite)
+                        {
+                            Debug.WriteLine($"[Пропущено] Пользователь отменил перезапись файла {fileName}");
+                            continue;
+                        }
+                    }
+
+                    doc.SaveAs(outputPath);
+                    Debug.WriteLine($"[OK] {fileName} создан успешно.");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[Ошибка] Не удалось создать документ: {ex.Message}");
+                }
+            }
+
+            Debug.WriteLine("[Генерация] Завершено.");
+        }
+
+
+        private void ReplaceAllPlaceholdersWithRegex(DocX document, Dictionary<string, string> map)
+        {
+            var options = new FunctionReplaceTextOptions
+            {
+                FindPattern = @"\[(.+?)\]",
+                RegExOptions = RegexOptions.None,
+                RegexMatchHandler = (matchStr) =>
+                {
+                    var marker = matchStr.Trim('[', ']');
+                    return map.TryGetValue(marker, out var value)
+                        ? value
+                        : matchStr;
+                }
+            };
+
+            document.ReplaceText(options);
+        }
+
+        private void ReplaceAllSmart(DocX doc, Dictionary<string, string> replacements, Dictionary<string, Table> tables)
+        {
+            var paragraphs = doc.Paragraphs.ToList();
+
+            foreach (var para in paragraphs)
+            {
+                var matches = Regex.Matches(para.Text, @"\[(.+?)\]");
+                foreach (Match match in matches)
+                {
+                    var key = match.Groups[1].Value;
+
+                    if (tables.TryGetValue(key, out var table))
+                    {
+                        var newPara = para.InsertParagraphAfterSelf("");
+                        newPara.InsertTableAfterSelf(table);
+                        doc.RemoveParagraph(para);
+                        break; // обработали параграф — больше не нужен
+                    }
+                    else if (replacements.TryGetValue(key, out var value))
+                    {
+                        para.ReplaceText($"[{key}]", value);
                     }
                 }
-
-                foreach (var kvp in map)
-                {
-                    if (kvp.Key != "СТУДЕНТ:ФИО")
-                        doc.ReplaceText($"[{kvp.Key}]", kvp.Value ?? "");
-                }
-
-                var fileName = $"{student.surname}_{template.Name}.docx";
-                doc.SaveAs(Path.Combine(outputDir, fileName));
             }
+        }
+
+
+        private string GetFileName(object data, string templateName)
+        {
+            if (data is Student s)
+                return $"{s.surname}_{templateName}.docx";
+
+            if (data.GetType().GetProperty("FullName")?.GetValue(data) is string fullName)
+                return $"{fullName}_{templateName}.docx";
+
+            return $"Документ_{templateName}_{Guid.NewGuid()}.docx";
         }
 
         public async Task GenerateTabularAsync(DocumentTemplate template, Group group, List<Student> students, Dictionary<string, string> manualInputs, string outputDir)
@@ -58,21 +266,97 @@ namespace EasySECv2.Services
             doc.SaveAs(Path.Combine(outputDir, $"{group.name}_{template.Name}.docx"));
         }
 
-        private Dictionary<string, string> BuildMap(List<PlaceholderMapping> mappings, Student student, Dictionary<string, string> manual)
+        private async Task<Dictionary<string, string>> BuildMap(List<PlaceholderMapping> mappings, object dataContext, Dictionary<string, string> manual, DatabaseService db)
         {
             var map = new Dictionary<string, string>();
+
             foreach (var m in mappings)
             {
+                string raw = manual.GetValueOrDefault(m.Placeholder, string.Empty);
+
                 string value = m.SourceType switch
                 {
-                    MappingSourceType.Manual => manual.GetValueOrDefault(m.Placeholder, string.Empty),
-                    MappingSourceType.Student => student.GetPropertyValue(m.Property) ?? string.Empty,
+                    MappingSourceType.ManualText => NormalizeNewlines(raw),
+                    MappingSourceType.ManualDate or
+                    MappingSourceType.ManualTimeFull or
+                    MappingSourceType.Manual => raw,
+                    MappingSourceType.Student or MappingSourceType.Table =>
+                        dataContext?.GetType().GetProperty(m.Property)?.GetValue(dataContext)?.ToString() ?? string.Empty,
+                    MappingSourceType.Group =>
+                        dataContext is Group g ? await BuildGroupValue(g, db) : string.Empty,
                     MappingSourceType.Calculated => GetCalculatedValue(m.Placeholder),
-                    _ => string.Empty
+                    _ => string.Empty,
                 };
+
+
+                //Debug.WriteLine("BUILDMAP: " + value);
                 map[m.Placeholder] = value;
             }
+
             return map;
+        }
+        private static async Task<string> BuildGroupValue(Group g, DatabaseService db)
+        {
+            Debug.WriteLine($"[GroupMapping] Группа: {g.name}, ID: {g.id}");
+
+            var students = await db.GetStudentsByGroupAsync(g.id);
+            Debug.WriteLine($"[GroupMapping] Найдено студентов: {students.Count}");
+
+            var result = $"{g.name}; " + string.Join("; ", students.Select(s => s.FullName));
+            Debug.WriteLine($"[GroupMapping] Сформировано значение: {result}");
+
+            return result;
+        }
+
+        public async Task GenerateFamiliarizationAsync(
+                        DocumentTemplate template,
+                        Group group,
+                        IEnumerable<Student> students,
+                        DateTime orderDate,
+                        string orderNumber,
+                        string outputDir)
+        {
+            // 0. Подстраховка аргументов
+            if (template == null) throw new ArgumentNullException(nameof(template));
+            if (group == null) throw new ArgumentNullException(nameof(group));
+            if (string.IsNullOrWhiteSpace(outputDir))
+                throw new ArgumentException("Не указан путь сохранения", nameof(outputDir));
+
+            // 1. Убеждаемся, что выходная папка существует
+            Directory.CreateDirectory(outputDir);
+
+            // 2. Имя результирующего файла
+            var outPath = Path.Combine(outputDir,
+                $"Лист_ознакомления_{group.name}_{DateTime.Now:yyyyMMddHHmmss}.docx");
+
+            // 3. Пока делаем простое копирование шаблона
+            //using (var src = File.OpenRead(template.FilePath))       // свойство, которое реально есть в модели
+            //using (var dst = File.Create(outPath))
+            //{
+            //    await src.CopyToAsync(dst);
+            //}
+
+            // 4. Место для будущей логики (таблица, ReplaceText и т.п.)
+            // TODO: реализовать заполнение DocX, когда убедимся, что система работает
+        }
+
+        private string TryFormatDate(string input, string? format)
+        {
+            if (DateTime.TryParse(input, out var date))
+                return date.ToString(format ?? "dd.MM.yyyy", new CultureInfo("ru-RU"));
+            return input;
+        }
+
+        private string TryFormatTime(string input, string? format)
+        {
+            if (TimeSpan.TryParse(input, out var time))
+                return DateTime.Today.Add(time).ToString(format ?? "HH:mm");
+            return input;
+        }
+
+        private string NormalizeNewlines(string input)
+        {
+            return input.Replace("\r\n", "\n").Replace("\n", Environment.NewLine);
         }
 
         private string GetCalculatedValue(string placeholder)
@@ -83,5 +367,10 @@ namespace EasySECv2.Services
                 _ => string.Empty
             };
         }
+        public DocumentGenerationService(DatabaseService db)
+        {
+            _db = db;
+        }
+
     }
 }

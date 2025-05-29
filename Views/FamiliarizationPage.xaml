@@ -1,19 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:m="clr-namespace:EasySECv2.Models"
              xmlns:viewmodels="clr-namespace:EasySECv2.ViewModels"
-             x:Class="EasySECv2.Views.ProtocolPage">
+             x:Class="EasySECv2.Views.FamiliarizationPage"
+             Title="Лист ознакомления">
+
     <ContentPage.BindingContext>
-        <viewmodels:ProtocolViewModel />
+        <viewmodels:FamiliarizationViewModel />
     </ContentPage.BindingContext>
 
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="16">
-            <Label Text="Шаблоны протоколов" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+            <Label Text="Шаблоны" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
 
             <HorizontalStackLayout Spacing="12">
                 <Picker ItemsSource="{Binding Templates}"
-                    ItemDisplayBinding="{Binding Name}"
-                    SelectedItem="{Binding SelectedTemplate}" TextColor="{StaticResource TextPrimary}" WidthRequest="400"/>
+                ItemDisplayBinding="{Binding Name}"
+                SelectedItem="{Binding SelectedTemplate}" TextColor="{StaticResource TextPrimary}" WidthRequest="400"/>
                 <Button Text="Добавить шаблон" Command="{Binding AddTemplateCommand}" />
                 <Button Text="Удалить шаблон" Command="{Binding DeleteTemplateCommand}" IsEnabled="{Binding CanDeleteTemplate}" />
             </HorizontalStackLayout>
@@ -26,19 +30,21 @@
             <SearchBar Placeholder="Введите ФИО" Text="{Binding SearchQuery}" />
 
             <Label Text="Допущенные студенты" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
-            <CollectionView ItemsSource="{Binding FilteredStudents}">
+            <CollectionView ItemsSource="{Binding FilteredGroups}">
                 <CollectionView.ItemTemplate>
-                    <DataTemplate>
+                    <DataTemplate x:DataType="m:SelectableGroup">
                         <HorizontalStackLayout Spacing="12" IsVisible="{Binding IsVisible}">
-                            <Label Text="{Binding Student.FullName}" VerticalOptions="Center" TextColor="{StaticResource TextPrimary}"/>
+                            <Label Text="{Binding Group.name}" VerticalOptions="Center" />
                             <Button Text="Сгенерировать протокол"
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ProtocolViewModel}}, Path=GenerateCommand}"
-                                    CommandParameter="{Binding Student}"
-                                    IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ProtocolViewModel}}, Path=CanGenerate}" />
+                Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FamiliarizationViewModel}}, Path=GenerateCommand}"
+                CommandParameter="{Binding Group}"
+                IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FamiliarizationViewModel}}, Path=CanGenerate}" />
                         </HorizontalStackLayout>
                     </DataTemplate>
+
                 </CollectionView.ItemTemplate>
             </CollectionView>
+
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

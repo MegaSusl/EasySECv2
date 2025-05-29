@@ -98,7 +98,7 @@ public partial class BatchCertificateViewModel : ObservableObject
             { "КОЛВО ЛИСТОВ", "20" },
             { "МЕСЯЦ", DateTime.Now.ToString("MMMM", new System.Globalization.CultureInfo("ru-RU")) }
         };
-        await _generator.GenerateBatchAsync(SelectedTemplate, selected, manual, OutputFolder);
+        await _generator.GenerateDocumentsAsync(SelectedTemplate, selected, manual, OutputFolder);
     }
 
     [RelayCommand(CanExecute = nameof(CanGenerateGroup))]
@@ -112,7 +112,7 @@ public partial class BatchCertificateViewModel : ObservableObject
             { "КОЛВО ЛИСТОВ", "20" },
             { "МЕСЯЦ", DateTime.Now.ToString("MMMM", new System.Globalization.CultureInfo("ru-RU")) }
         };
-        await _generator.GenerateBatchAsync(SelectedTemplate, students, manual, OutputFolder);
+        await _generator.GenerateDocumentsAsync(SelectedTemplate, students, manual, OutputFolder);
     }
 
     [ObservableProperty] private bool canGenerate;

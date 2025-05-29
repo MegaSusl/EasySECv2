@@ -12,6 +12,7 @@ using EasySECv2.Models;
 using SQLite;
 using CommunityToolkit.Maui;
 using EasySECv2.WinUI;
+using DateTimePicker.MAUI;
 
 namespace EasySECv2
 {
@@ -149,6 +150,12 @@ namespace EasySECv2
 
             builder.Services.AddTransient<SecCompositionViewModel>();
             builder.Services.AddTransient<SecCompositionPage>();
+            
+            builder.Services.AddTransient<SecSecretaryReplacementViewModel>();
+            builder.Services.AddTransient<SecSecretaryReplacementPage>();
+            
+            builder.Services.AddTransient<SecMemberReplacementViewModel>();
+            builder.Services.AddTransient<SecMemberReplacementPage>();
 
             // Сначала регистрируем парсер
             // А затем сервис, который его использует
@@ -159,6 +166,10 @@ namespace EasySECv2
 
             builder.Services.AddTransient<ProtocolViewModel>();
             builder.Services.AddTransient<ProtocolPage>();
+
+            builder.Services.AddSingleton<FamiliarizationViewModel>();
+            builder.Services.AddSingleton<FamiliarizationPage>();
+
 
             var app = builder.Build();
 

@@ -32,13 +32,13 @@
 
     <FlyoutItem Title="Состав ГЭК" Icon="docs.png">
         <ShellContent Title="Формирование состава ГЭК" ContentTemplate="{DataTemplate views:SecCompositionPage}" Shell.FlyoutItemIsVisible="False" />
-        <ShellContent Title="Замена членов" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
-        <ShellContent Title="Замена секретаря" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="True" />
+        <ShellContent Title="Замена членов" ContentTemplate="{DataTemplate views:SecMemberReplacementPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Замена секретаря" ContentTemplate="{DataTemplate views:SecSecretaryReplacementPage}" Shell.FlyoutItemIsVisible="True" />
     </FlyoutItem>
     
     <FlyoutItem Title="Закрепление и уточнение тем ВКР" Icon="docs.png">
         <ShellContent Title="Форма приказа" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
-        <ShellContent Title="Лист ознакомления" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Лист ознакомления" ContentTemplate="{DataTemplate views:FamiliarizationPage}" Shell.FlyoutItemIsVisible="False" />
     </FlyoutItem>
     
     <FlyoutItem Title="Графики проведения испытаний" Icon="docs.png">

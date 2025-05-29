@@ -7,12 +7,12 @@ using System.Diagnostics;
 
 namespace EasySECv2.ViewModels;
 
-public partial class SecCompositionViewModel : ObservableObject
+public partial class SecSecretaryReplacementViewModel : ObservableObject
 {
-    private readonly ITemplateService _templateService;
-    private readonly IFolderPickerService _folderPicker;
-    private readonly IDocumentGenerationService _generator;
-    private readonly DatabaseService _db;
+    private readonly ITemplateService _templateService = MauiProgram.GetService<ITemplateService>();
+    private readonly IFolderPickerService _folderPicker = MauiProgram.GetService<IFolderPickerService>();
+    private readonly IDocumentGenerationService _generator = MauiProgram.GetService<IDocumentGenerationService>();
+    private readonly DatabaseService _db = MauiProgram.GetService<DatabaseService>();
 
     public ObservableCollection<DocumentTemplate> Templates { get; } = new();
 
@@ -22,23 +22,14 @@ public partial class SecCompositionViewModel : ObservableObject
     public bool CanGenerate => SelectedTemplate != null && !string.IsNullOrEmpty(OutputFolder);
     public bool CanDeleteTemplate => SelectedTemplate != null;
 
-    public SecCompositionViewModel()
-    {
-        _templateService = MauiProgram.GetService<ITemplateService>();
-        _folderPicker = MauiProgram.GetService<IFolderPickerService>();
-        _generator = MauiProgram.GetService<IDocumentGenerationService>();
-        _db = MauiProgram.GetService<DatabaseService>();
-
-        LoadTemplates();
-    }
+    public SecSecretaryReplacementViewModel() => LoadTemplates();
 
     private async void LoadTemplates()
     {
-        var list = await _templateService.GetTemplatesAsync("sec_composition");
+        var list = await _templateService.GetTemplatesAsync("sec_member_replace");
         Templates.Clear();
         foreach (var tpl in list)
             Templates.Add(tpl);
-
         SelectedTemplate = Templates.FirstOrDefault();
     }
 
@@ -54,30 +45,26 @@ public partial class SecCompositionViewModel : ObservableObject
         var path = await _folderPicker.PickFolderAsync();
         if (!string.IsNullOrEmpty(path))
             OutputFolder = path;
-
         OnPropertyChanged(nameof(CanGenerate));
     }
 
     [RelayCommand(CanExecute = nameof(CanGenerate))]
     private async Task GenerateAsync()
     {
-        var template = SelectedTemplate;
-        if (template == null)
-            return;
+        if (SelectedTemplate == null) return;
 
         var staff = await _db.GetAllStaffAsync();
         var institutes = await _db.GetAllInstitutesAsync();
 
         var vm = new FormViewModel();
-        vm.Load(template.Mappings, staff, institutes);
+        vm.Load(SelectedTemplate.Mappings, staff, institutes);
 
         var page = new Views.FormPage { BindingContext = vm };
         await Shell.Current.Navigation.PushAsync(page);
-
         var manual = await vm.Completion;
         await Shell.Current.Navigation.PopAsync();
 
-        await _generator.GenerateDocumentsAsync(template, new List<object> { new object() }, manual, OutputFolder);
+        await _generator.GenerateDocumentsAsync(SelectedTemplate, new List<object> { new object() }, manual, OutputFolder);
     }
 
     [RelayCommand(CanExecute = nameof(CanDeleteTemplate))]
@@ -95,7 +82,7 @@ public partial class SecCompositionViewModel : ObservableObject
     {
         var file = await FilePicker.Default.PickAsync(new PickOptions
         {
-            PickerTitle = "Выберите шаблон документа",
+            PickerTitle = "Выберите шаблон",
             FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
             {
                 { DevicePlatform.WinUI, new[] { ".docx" } }
@@ -105,7 +92,7 @@ public partial class SecCompositionViewModel : ObservableObject
         if (file == null) return;
 
         using var stream = await file.OpenReadAsync();
-        await _templateService.AddTemplateAsync(stream, file.FileName, "sec_composition");
+        await _templateService.AddTemplateAsync(stream, file.FileName, "sec_secretary_replace");
         LoadTemplates();
     }
 }

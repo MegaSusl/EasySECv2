@@ -55,7 +55,8 @@ namespace EasySECv2.Services
                         middleName = parts.Length > 2 ? parts[2] : "",
                         email = email,
                         phone = phone,
-                        groupId = groupId
+                        groupId = groupId,
+                        isAccessed = true
                     };
 
                     students.Add(student);
