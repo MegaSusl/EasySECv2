@@ -28,7 +28,7 @@
         <Label Text="EasySEC" Style="{StaticResource HeaderLabelStyle}" />
     </Shell.FlyoutHeader>
     <!-- Главное меню -->
-    <ShellContent Title="Главная" ContentTemplate="{DataTemplate local:MainPage}" Shell.FlyoutItemIsVisible="True" />
+    <ShellContent Title="Главная" ContentTemplate="{DataTemplate views:CalendarPlanPage}" Shell.FlyoutItemIsVisible="True" />
 
     <FlyoutItem Title="Состав ГЭК" Icon="docs.png">
         <ShellContent Title="Формирование состава ГЭК" ContentTemplate="{DataTemplate views:SecCompositionPage}" Shell.FlyoutItemIsVisible="False" />
@@ -37,18 +37,18 @@
     </FlyoutItem>
     
     <FlyoutItem Title="Закрепление и уточнение тем ВКР" Icon="docs.png">
-        <ShellContent Title="Форма приказа" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Форма приказа" ContentTemplate="{DataTemplate views:VkrTopicAssignmentPage}" Shell.FlyoutItemIsVisible="False" />
         <ShellContent Title="Лист ознакомления" ContentTemplate="{DataTemplate views:FamiliarizationPage}" Shell.FlyoutItemIsVisible="False" />
     </FlyoutItem>
     
     <FlyoutItem Title="Графики проведения испытаний" Icon="docs.png">
-        <ShellContent Title="Кафедра" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
-        <ShellContent Title="УМУ" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Кафедра" ContentTemplate="{DataTemplate views:StateExamSchedulePage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="УМУ" ContentTemplate="{DataTemplate views:StateExamScheduleUmuPage}" Shell.FlyoutItemIsVisible="False" />
     </FlyoutItem>
 
     <FlyoutItem Title="Заседание" Icon="docs.png">
         <ShellContent Title="Протокол" ContentTemplate="{DataTemplate views:ProtocolPage}" Shell.FlyoutItemIsVisible="False" />
-        <ShellContent Title="Отчет" ContentTemplate="{DataTemplate local:PlaceholderPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Отчет" ContentTemplate="{DataTemplate views:VkrInventoryPage}" Shell.FlyoutItemIsVisible="False" />
         <ShellContent Title="Справки" ContentTemplate="{DataTemplate views:BatchCertificatePage}" Shell.FlyoutItemIsVisible="False" />
     </FlyoutItem>
 

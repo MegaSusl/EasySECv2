@@ -21,20 +21,20 @@ namespace EasySECv2.Models
         [Editable("Отчество", Order = 30)]
         public string middleName { get; set; }
 
-        [Editable("Работа", Order = 40)]
+        //[Editable("Должность", Order = 40)]
         public string job { get; set; }
 
-        [Editable("Степень", Order = 50)]
+        [Editable("Ученая степень", Order = 50)]
         public string degree { get; set; }
         
-        [Editable("Степень другая??", Order = 60)]
+        [Editable("Ученая звание", Order = 60)]
         public string degreeRank { get; set; }
 
         [Editable("Награды", Order = 70)]
         public string degreeAwards { get; set; }
 
         [Indexed]
-        [Editable("Должность?", Order = 80)]
+        [Editable("Должность", Order = 40)]
         public long position { get; set; }
     }
     public partial class Staff

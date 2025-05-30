@@ -37,39 +37,39 @@
                     </Grid.ColumnDefinitions>
 
                     <SearchBar
-              Grid.Column="0"
-              Placeholder="Поиск по ФИО или ID"
-              Text="{Binding SearchQuery}"
-              BackgroundColor="{StaticResource AccentLight}"
-              PlaceholderColor="{StaticResource TextSecondary}"
-              TextColor="{StaticResource TextPrimary}"
-              CancelButtonColor="{StaticResource AccentColor}" />
+                      Grid.Column="0"
+                      Placeholder="Поиск по ФИО или ID"
+                      Text="{Binding SearchQuery}"
+                      BackgroundColor="{StaticResource AccentLight}"
+                      PlaceholderColor="{StaticResource TextSecondary}"
+                      TextColor="{StaticResource TextPrimary}"
+                      CancelButtonColor="{StaticResource AccentColor}" />
 
                     <Picker
-              Grid.Column="1"
-              Title="Группа"
-              ItemsSource="{Binding Groups}"
-              ItemDisplayBinding="{Binding name}"
-              SelectedItem="{Binding SelectedGroup}"
-              BackgroundColor="{StaticResource AccentLight}"
-              TextColor="{StaticResource TextPrimary}" />
+                      Grid.Column="1"
+                      Title="Группа"
+                      ItemsSource="{Binding Groups}"
+                      ItemDisplayBinding="{Binding name}"
+                      SelectedItem="{Binding SelectedGroup}"
+                      BackgroundColor="{StaticResource AccentLight}"
+                      TextColor="{StaticResource TextPrimary}" />
 
                     <Picker
-              Grid.Column="2"
-              Title="Направление"
-              ItemsSource="{Binding Orientations}"
-              ItemDisplayBinding="{Binding name}"
-              SelectedItem="{Binding SelectedOrientation}"
-              BackgroundColor="{StaticResource AccentLight}"
-              TextColor="{StaticResource TextPrimary}" />
+                      Grid.Column="2"
+                      Title="Направление"
+                      ItemsSource="{Binding Orientations}"
+                      ItemDisplayBinding="{Binding name}"
+                      SelectedItem="{Binding SelectedOrientation}"
+                      BackgroundColor="{StaticResource AccentLight}"
+                      TextColor="{StaticResource TextPrimary}" />
 
                     <Picker
-              Grid.Column="3"
-              Title="Сортировка"
-              ItemsSource="{Binding SortOptions}"
-              SelectedItem="{Binding SelectedSortOption}"
-              BackgroundColor="{StaticResource AccentLight}"
-              TextColor="{StaticResource TextPrimary}" />
+                      Grid.Column="3"
+                      Title="Сортировка"
+                      ItemsSource="{Binding SortOptions}"
+                      SelectedItem="{Binding SelectedSortOption}"
+                      BackgroundColor="{StaticResource AccentLight}"
+                      TextColor="{StaticResource TextPrimary}" />
                 </Grid>
             </Frame>
         </DataTemplate>

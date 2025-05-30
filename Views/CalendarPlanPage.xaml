@@ -1,0 +1,105 @@
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:EasySECv2.ViewModels"
+             x:Class="EasySECv2.Views.CalendarPlanPage"
+             x:DataType="vm:CalendarPlanViewModel"
+             Title="">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="20" RowSpacing="10">
+
+        <VerticalStackLayout Spacing="5" Padding="0,0,0,20" HorizontalOptions="Center" Grid.Row="0">
+            <Label Text="{Binding CurrentTime}" 
+           FontSize="72"
+           FontAttributes="Bold"
+           TextColor="{StaticResource TextPrimary}"
+           HorizontalOptions="Center" />
+
+            <!--<Label Text="Следи за временем, секретарь!"
+           FontSize="18"
+           TextColor="Gray"
+           HorizontalOptions="Center" />-->
+        </VerticalStackLayout>
+
+        <!-- Заголовок -->
+        <Label Text="Календарный план ГИА"
+               FontSize="24"
+               FontAttributes="Bold"
+               HorizontalOptions="Center"
+               TextColor="{StaticResource TextPrimary}"
+               Grid.Row="1" />
+
+        <!-- Заголовок + кнопка -->
+        <Grid ColumnDefinitions="*,Auto" Padding="0,0,0,5" Grid.Row="2">
+            <Label Text="Ближайшие события"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center"
+                   TextColor="{StaticResource TextPrimary}"
+                   Grid.Column="0" />
+
+            <Button Text="+"
+                    FontSize="16"
+                    TextColor="White"
+                    BackgroundColor="{StaticResource PrimaryLight}"
+                    CornerRadius="10"
+                    Padding="10,5"
+                    HorizontalOptions="End"
+                    Command="{Binding AddEventCommand}"
+                    Grid.Column="1">
+            </Button>
+
+        </Grid>
+
+        <!-- Прокручиваемый список -->
+        <CollectionView ItemsSource="{Binding Events}"
+                        Grid.Row="3"
+                        VerticalOptions="FillAndExpand"
+                        BackgroundColor="{StaticResource White}">
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:CalendarEvent">
+                    <Frame BorderColor="Gray" CornerRadius="12" Padding="12" Margin="0,0,0,20">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <VerticalStackLayout Grid.Row="0" Grid.Column="0">
+                                <Label FontSize="16" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}">
+                                    <Label.FormattedText>
+                                        <Binding Path="TitleFormatted" />
+                                    </Label.FormattedText>
+                                </Label>
+                                <Label Text="{Binding Deadline, StringFormat='Крайний срок: {0:dd.MM.yyyy}'}" FontSize="14" TextColor="{StaticResource PrimaryDark}" />
+                                <Label Text="{Binding DaysLeftDisplay}" FontSize="14" TextColor="{StaticResource PrimaryDark}" />
+                                <Label Text="{Binding Description}" FontSize="12" TextColor="Gray" />
+                            </VerticalStackLayout>
+
+                            <Button Text="⋯"
+                                    FontSize="20"
+                                    WidthRequest="28"
+                                    HeightRequest="20"
+                                    Padding="0"
+                                    Margin="0"
+                                    BackgroundColor="{StaticResource PrimaryLight}"
+                                    HorizontalOptions="End"
+                                    VerticalOptions="Start"
+                                    Clicked="OnContextMenuClicked"
+                                    CommandParameter="{Binding}" />
+
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+</ContentPage>

@@ -13,6 +13,13 @@ using SQLite;
 using CommunityToolkit.Maui;
 using EasySECv2.WinUI;
 using DateTimePicker.MAUI;
+using Orientation = EasySECv2.Models.Orientation;
+using Microsoft.Maui.Handlers;
+
+
+#if WINDOWS
+using Microsoft.UI.Xaml.Controls;
+#endif
 
 namespace EasySECv2
 {
@@ -30,6 +37,21 @@ namespace EasySECv2
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                })
+                .ConfigureMauiHandlers(handlers =>
+                {
+#if WINDOWS
+                    handlers.AddHandler<Entry, EntryHandler>();
+                    //EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+                    //{
+                    //    if (handler.PlatformView is TextBox textBox)
+                    //    {
+                    //        textBox.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+                    //        textBox.Background = null;
+                    //        textBox.UseSystemFocusVisuals = false;
+                    //    }
+                    //});
+#endif
                 });
 
 #if DEBUG
@@ -169,7 +191,21 @@ namespace EasySECv2
 
             builder.Services.AddSingleton<FamiliarizationViewModel>();
             builder.Services.AddSingleton<FamiliarizationPage>();
+            
+            builder.Services.AddSingleton<CalendarPlanViewModel>();
+            builder.Services.AddSingleton<CalendarPlanPage>();
 
+            builder.Services.AddSingleton<VkrInventoryViewModel>();
+            builder.Services.AddSingleton<VkrInventoryPage>();
+
+            builder.Services.AddSingleton<StateExamScheduleViewModel>();
+            builder.Services.AddSingleton<StateExamSchedulePage>();
+
+            builder.Services.AddSingleton<StateExamScheduleUmuViewModel>();
+            builder.Services.AddSingleton<StateExamScheduleUmuPage>();
+
+            builder.Services.AddSingleton<VkrTopicAssignmentViewModel>();
+            builder.Services.AddSingleton<VkrTopicAssignmentPage>();
 
             var app = builder.Build();
 

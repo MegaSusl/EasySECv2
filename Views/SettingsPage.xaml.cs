@@ -8,6 +8,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
+using EasySECv2.ViewModels;
+using static Microsoft.IO.RecyclableMemoryStreamManager;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace EasySECv2.Views
 {
@@ -17,7 +21,19 @@ namespace EasySECv2.Views
         private readonly IPageSettingsService _pageSettings;
         private readonly ITemplateService _templateService;
 
-        public List<string> PageKeys { get; } = new() { "batch-certificate", "protocol-vkr", "familiarization", "sec_composition", "sec_member_replace", "sec_secretary_replace" };
+        public List<string> PageKeys { get; } = new()
+        {
+          "batch-certificate",
+          "protocol-vkr",
+          "familiarization",
+          "sec_composition",
+          "sec_member_replace",
+          "sec_secretary_replace",
+          "vkr-inventory",
+          "state-exam-schedule",
+          "state-exam-schedule-umu",
+          "vkr-topic-assignment"
+        };
 
         private string selectedPageKey = "sec_composition";
         public string SelectedPageKey
@@ -44,6 +60,41 @@ namespace EasySECv2.Views
             _pageSettings = pageSettings;
             _templateService = templateService;
             BindingContext = this;
+        }
+        public async Task LoadDefaultEventsFromAsset()
+        {
+            try
+            {
+                // Путь к рабочему файлу календаря
+                string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string appFolder = Path.Combine(documents, "EasySEC");
+                string filePath = Path.Combine(appFolder, "calendar_events.json");
+
+                // Убедиться, что папка существует
+                if (!Directory.Exists(appFolder))
+                    Directory.CreateDirectory(appFolder);
+
+                // Читаем встроенный JSON из ресурсов
+                using var stream = await FileSystem.OpenAppPackageFileAsync("default_events.json");
+                using var reader = new StreamReader(stream);
+                var json = await reader.ReadToEndAsync();
+
+                // Проверка и запись
+                var events = JsonSerializer.Deserialize<List<CalendarEvent>>(json);
+                if (events is null || events.Count == 0)
+                    return;
+
+                var jsonOut = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(filePath, jsonOut);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Ошибка при загрузке событий по умолчанию: " + ex.Message);
+            }
+        }
+        private async void OnSeedCalendarClicked(object sender, EventArgs e)
+        {
+            await LoadDefaultEventsFromAsset();
         }
 
         protected override async void OnAppearing()

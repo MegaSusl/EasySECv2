@@ -7,8 +7,9 @@
     BackgroundColor="{StaticResource PageBackground}">
 
     <ScrollView>
-        <VerticalStackLayout Spacing="24" Padding="16">
-
+        <VerticalStackLayout Spacing="12" Padding="16">
+            <Label Text="Админ меню" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" Margin="0,0,0,12" FontSize="22"/>
+            <Label Text="Очистка таблицы БД" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" Margin="0,0,0,0" FontSize="16"/>
             <!-- Существующий блок: очистка таблиц -->
             <Frame BackgroundColor="{StaticResource CardBackground}"
                CornerRadius="8"
@@ -27,42 +28,95 @@
             </Frame>
 
             <Button Text="Удалить все записи"
-                BackgroundColor="#E53935"
-                TextColor="White"
-                CornerRadius="6"
-                Padding="12,8"
-                HorizontalOptions="Center"
-                Clicked="OnDeleteAllClicked" />
-
-            <Button Text="Заполнить направления из JSON"
                 BackgroundColor="{StaticResource Primary}"
                 TextColor="White"
                 CornerRadius="6"
                 Padding="12,8"
                 HorizontalOptions="Center"
-                Clicked="OnSeedOrientationsClicked" />
-          
+                Clicked="OnDeleteAllClicked" />
+            
+            <BoxView HeightRequest="1" BackgroundColor="Gray" />
+            <Label Text="Автоматическое заполнение из пресетов" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" Margin="0,0,0,0" FontSize="16"/>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Padding="0,10">
+
+                <Button Text="Заполнить направления из JSON"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="6"
+                    Padding="12,8"
+                    Grid.Column="0"
+                    Clicked="OnSeedOrientationsClicked" />
+
+                <Button Text="Заполнить календарь по умолчанию"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="6"
+                    Padding="12,8"
+                    Grid.Column="1"
+                    Clicked="OnSeedCalendarClicked" />
+
+            </Grid>
+
+
             <BoxView HeightRequest="1" BackgroundColor="Gray" />
 
+            <Label Text="Настройки маркеров" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" Margin="0,0,0,12" FontSize="22"/>
             <Label Text="Выберите страницу:" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
-            <Picker x:Name="PagePicker"
-                Title="Выберите страницу"
-                SelectedIndexChanged="OnPagePickerChanged" />
+            <Picker x:Name="PagePicker" SelectedIndexChanged="OnPagePickerChanged" BackgroundColor="{StaticResource AccentLight}"/>
 
-            <Label Text="Маркеры по умолчанию:" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
-            <CollectionView x:Name="MappingsEditor" ItemsSource="{Binding GlobalMappings}" SelectionMode="None">
+            <Label Text="Маркеры:" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+            <CollectionView x:Name="MappingsEditor" ItemsSource="{Binding GlobalMappings}" SelectionMode="None" BackgroundColor="White">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="10"/>
+                </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <StackLayout Orientation="Vertical" Padding="5">
-                            <Label Text="Маркер" TextColor="{StaticResource TextPrimary}"/>
-                            <Entry Text="{Binding Placeholder}" TextColor="{StaticResource TextPrimary}"/>
+                        <Border Stroke="{StaticResource PrimaryLight}"
+                                StrokeThickness="1"
+                                BackgroundColor="{StaticResource BackgroundAlt}"
+                                Padding="12"
+                                Margin="0,10,0,10"
+                                >
 
-                            <Label Text="Источник" TextColor="{StaticResource TextPrimary}"/>
-                            <Picker ItemsSource="{Binding BindingContext.SourceTypes, Source={x:Reference MappingsEditor}}" SelectedItem="{Binding SourceType}" />
+                            <Grid Padding="5" BackgroundColor="White"
+                                  RowDefinitions="Auto,Auto,Auto"
+                                  ColumnDefinitions="Auto,*"
+                                  RowSpacing="12"
+                                  ColumnSpacing="10" Margin="0">
 
-                            <Label Text="Свойство (если нужно)" TextColor="{StaticResource TextPrimary}"/>
-                            <Entry Text="{Binding Property}" TextColor="{StaticResource TextPrimary}"/>
-                        </StackLayout>
+                                <!-- Маркер -->
+                                <Label Grid.Row="0" Grid.Column="0" 
+                                       Text="Маркер" 
+                                       VerticalOptions="Center"
+                                       TextColor="{StaticResource TextPrimary}" />
+                                <Entry Grid.Row="0" Grid.Column="1" 
+                                       Text="{Binding Placeholder}" 
+                                       TextColor="{StaticResource TextPrimary}" 
+                                       BackgroundColor="{StaticResource AccentLight}" />
+
+                                <!-- Источник -->
+                                <Label Grid.Row="1" Grid.Column="0" 
+                                       Text="Источник" 
+                                       VerticalOptions="Center"
+                                       TextColor="{StaticResource TextPrimary}" />
+                                <Picker Grid.Row="1" Grid.Column="1" 
+                                        BackgroundColor="{StaticResource AccentLight}"
+                                        ItemsSource="{Binding BindingContext.SourceTypes, Source={x:Reference MappingsEditor}}"
+                                        SelectedItem="{Binding SourceType}" />
+
+                                <!-- Свойство -->
+                                <Label Grid.Row="2" Grid.Column="0" 
+                                       Text="Свойство (если нужно)" 
+                                       VerticalOptions="Center"
+                                       TextColor="{StaticResource TextPrimary}" />
+                                <Entry Grid.Row="2" Grid.Column="1" 
+                                       BackgroundColor="{StaticResource AccentLight}"
+                                       Text="{Binding Property}" 
+                                       TextColor="{StaticResource TextPrimary}" />
+                            </Grid>
+                        </Border>
+
+
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>

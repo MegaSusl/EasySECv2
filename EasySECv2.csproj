@@ -94,6 +94,12 @@
 	  <MauiXaml Update="Views\BatchCertificatePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="Views\CalendarPlanPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\EventPopup.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Views\FamiliarizationPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
@@ -107,6 +113,12 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\SecSecretaryReplacementPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\StateExamSchedulePage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\StateExamScheduleUmuPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\TablePages\DepartmentPage.xaml">
@@ -157,6 +169,29 @@
 	  <MauiXaml Update="Views\TablePages\StudentsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="Views\VkrInventoryPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\VkrTopicAssignmentPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	</ItemGroup>
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'">
+		<!-- цель и архитектура -->
+		<RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+
+		<!-- разворачиваем без MSIX, чистая EXE -->
+		<WindowsPackageType>None</WindowsPackageType>
+
+		<!-- делаем самодостаточный один файл -->
+		<SelfContained>true</SelfContained>
+		<PublishSingleFile>true</PublishSingleFile>
+
+		<!-- чтобы нативные библиотеки (SQLite) упаковывались внутрь exe -->
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+
+		<!-- уменьшение размера; выключите, если отражение/DocX ломаются -->
+		<PublishTrimmed>false</PublishTrimmed>
+	</PropertyGroup>
 
 </Project>

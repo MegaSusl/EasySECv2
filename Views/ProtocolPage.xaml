@@ -25,20 +25,52 @@
             <Label Text="Поиск студентов:" TextColor="{StaticResource TextPrimary}"/>
             <SearchBar Placeholder="Введите ФИО" Text="{Binding SearchQuery}" />
 
-            <Label Text="Допущенные студенты" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
-            <CollectionView ItemsSource="{Binding FilteredStudents}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <HorizontalStackLayout Spacing="12" IsVisible="{Binding IsVisible}">
-                            <Label Text="{Binding Student.FullName}" VerticalOptions="Center" TextColor="{StaticResource TextPrimary}"/>
-                            <Button Text="Сгенерировать протокол"
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ProtocolViewModel}}, Path=GenerateCommand}"
-                                    CommandParameter="{Binding Student}"
-                                    IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ProtocolViewModel}}, Path=CanGenerate}" />
-                        </HorizontalStackLayout>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <Border Stroke="{StaticResource PrimaryLight}" 
+                    StrokeThickness="1"
+                    BackgroundColor="{StaticResource BackgroundAlt}"
+                    Padding="12">
+
+                <VerticalStackLayout Spacing="10">
+
+                    <Label Text="Допущенные студенты" FontSize="20"
+                           FontAttributes="Bold" 
+                           TextColor="{StaticResource TextPrimary}" />
+
+                    <CollectionView ItemsSource="{Binding FilteredStudents}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="Auto,*,Auto"
+                                      IsVisible="{Binding IsVisible}" 
+                                      BackgroundColor="White"
+                                      Padding="0,4">
+
+                                    <!-- Имя студента слева, в рамке -->
+                                    <Border Stroke="{StaticResource PrimaryLight}" 
+                                            StrokeThickness="1" 
+                                            BackgroundColor="{StaticResource BackgroundAlt}"
+                                            Padding="8,4"
+                                            Grid.Column="0"
+                                            VerticalOptions="Center">
+
+                                        <Label Text="{Binding Student.FullName}" 
+                                               VerticalOptions="Center"
+                                               TextColor="{StaticResource TextPrimary}" />
+                                    </Border>
+
+                                    <!-- Кнопка справа -->
+                                    <Button Text="Сгенерировать протокол"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ProtocolViewModel}}, Path=GenerateCommand}"
+                                            CommandParameter="{Binding Student}"
+                                            IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:ProtocolViewModel}}, Path=CanGenerate}"
+                                            Grid.Column="2" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                </VerticalStackLayout>
+            </Border>
+
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

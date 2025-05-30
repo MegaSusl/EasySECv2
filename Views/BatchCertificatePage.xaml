@@ -25,17 +25,51 @@
                     ItemDisplayBinding="{Binding name}"
                     SelectedItem="{Binding SelectedGroup}"/>
 
-            <Label Text="Список студентов (отметьте нужных):" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
-            <CollectionView ItemsSource="{Binding FilteredStudents}" HeightRequest="300">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <StackLayout Orientation="Horizontal" Spacing="12">
-                            <CheckBox IsChecked="{Binding IsSelected}" />
-                            <Label Text="{Binding FullName}" VerticalOptions="Center" TextColor="{StaticResource TextPrimary}"/>
-                        </StackLayout>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <Border Stroke="{StaticResource PrimaryLight}" 
+                    StrokeThickness="1"
+                    BackgroundColor="{StaticResource BackgroundAlt}" WidthRequest="700" HorizontalOptions="Start"
+                    Padding="12">
+
+                <VerticalStackLayout Spacing="10">
+
+                    <Label Text="Список студентов (отметьте нужных):" 
+               FontAttributes="Bold" 
+               TextColor="{StaticResource TextPrimary}" />
+
+                    <CollectionView ItemsSource="{Binding FilteredStudents}" HeightRequest="300">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="Auto, *, 60" BackgroundColor="White"
+                          Padding="0,4"
+                          VerticalOptions="Center">
+
+                                    <!-- Имя студента в рамке -->
+                                    <Border Stroke="{StaticResource PrimaryLight}" 
+                                StrokeThickness="1" 
+                                BackgroundColor="{StaticResource BackgroundAlt}"
+                                Padding="8,4"
+                                Grid.Column="0" 
+                                VerticalOptions="Center">
+
+                                        <Label Text="{Binding FullName}" 
+                                   VerticalOptions="Center" MaximumWidthRequest="400" MinimumWidthRequest="260"
+                                   TextColor="{StaticResource TextPrimary}" />
+                                    </Border>
+
+                                    <!-- Чекбокс справа -->
+                                    <CheckBox IsChecked="{Binding IsSelected}" 
+                                              Grid.Column="2" 
+                                              HorizontalOptions="End"
+                                              VerticalOptions="Center" WidthRequest="20" HeightRequest="20"
+                                              Margin="0,0,0,0" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                </VerticalStackLayout>
+            </Border>
+
 
             <Button Text="Выбрать папку сохранения" Command="{Binding SelectFolderCommand}" />
             <Label Text="{Binding OutputFolder}" FontSize="12" LineBreakMode="WordWrap" TextColor="{StaticResource TextPrimary}"/>

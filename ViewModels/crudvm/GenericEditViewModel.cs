@@ -21,8 +21,6 @@ namespace EasySECv2.ViewModels
         public T Item { get; private set; }
         public bool IsNew { get; private set; }
 
-        // Всё ещё нам удобно хранить именно список PropertyInfo,
-        // но интерфейс требует IList, поэтому мы явно экспонируем его:
         private readonly ObservableCollection<PropertyInfo> _fields
             = new ObservableCollection<PropertyInfo>();
         public IList Fields => _fields;

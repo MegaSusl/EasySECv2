@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:EasySECv2.ViewModels"
+             x:Class="EasySECv2.Views.VkrTopicAssignmentPage"
+             Title="Закрепление тем ВКР и назначение научных руководителей">
+
+    <ContentPage.BindingContext>
+        <viewmodels:SecSecretaryReplacementViewModel />
+    </ContentPage.BindingContext>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="16">
+            <Label Text="Шаблоны" FontSize="18" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+
+            <HorizontalStackLayout Spacing="12">
+                <Picker ItemsSource="{Binding Templates}"
+                        ItemDisplayBinding="{Binding Name}"
+                        SelectedItem="{Binding SelectedTemplate}"
+                        TextColor="{StaticResource TextPrimary}"
+                        WidthRequest="400" />
+                <Button Text="Добавить шаблон" Command="{Binding AddTemplateCommand}" />
+                <Button Text="Удалить шаблон" Command="{Binding DeleteTemplateCommand}" IsEnabled="{Binding CanDeleteTemplate}" />
+            </HorizontalStackLayout>
+
+            <Label Text="Папка сохранения документа:" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" />
+            <Button Text="Выбрать папку" Command="{Binding SelectFolderCommand}" />
+            <Label Text="{Binding OutputFolder}" FontSize="12" LineBreakMode="WordWrap" TextColor="{StaticResource TextPrimary}" />
+
+            <Button Text="Сгенерировать"
+                    Command="{Binding GenerateCommand}"
+                    IsEnabled="{Binding CanGenerate}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

@@ -15,32 +15,40 @@
             <CollectionView ItemsSource="{Binding Fields}" SelectionMode="None">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <VerticalStackLayout>
-                            <Label IsVisible="{Binding isVisible}" Text="{Binding DisplayName}" Margin="2, 4" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
+                        <VerticalStackLayout BackgroundColor="{StaticResource White}">
+                            <Label IsVisible="{Binding isVisible}" Text="{Binding DisplayName}" Margin="2, 6" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
 
                             <!-- Entry для Manual -->
                             <Entry Text="{Binding Value}" Placeholder="Введите значение" 
-                                   IsVisible="{Binding IsEntry}" Margin="0, 0, 20, 0" PlaceholderColor="{StaticResource TextSecondary}"/>
+                                   IsVisible="{Binding IsEntry}" Margin="0, 0, 20, 0" PlaceholderColor="{StaticResource TextSecondary}" BackgroundColor="{StaticResource AccentLight}"/>
 
                             <!-- Editor для ManualText -->
-                            <Editor Text="{Binding Value}" Placeholder="Введите текст..." AutoSize="TextChanges" 
+                            <Editor Text="{Binding Value}" Placeholder="Введите текст..." AutoSize="TextChanges" BackgroundColor="{StaticResource AccentLight}"
                                     IsVisible="{Binding IsEditor}" HeightRequest="100" TextColor="{StaticResource TextPrimary}" PlaceholderColor="{StaticResource TextSecondary}"/>
                             <!-- Минимум строк -->
                             <StackLayout Orientation="Horizontal" IsVisible="{Binding IsEditor}">
                                 <Label Text="Мин. строк:" VerticalOptions="Center" TextColor="{StaticResource TextPrimary}"/>
-                                <Entry Text="{Binding MinLines}" Keyboard="Numeric" WidthRequest="60" TextColor="{StaticResource TextPrimary}"/>
+                                <Entry Text="{Binding MinLines}" Keyboard="Numeric" WidthRequest="60" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource AccentLight}"/>
                             </StackLayout>
                             
                             <!-- DatePicker для ManualDate -->
-                            <DatePicker Date="{Binding DateValue}" IsVisible="{Binding IsDate}" TextColor="{StaticResource TextPrimary}"/>
+                            <DatePicker Date="{Binding DateValue}" IsVisible="{Binding IsDate}" TextColor="{StaticResource TextPrimary}" BackgroundColor="{StaticResource AccentLight}"/>
                             <Label Text="Формат отображаемой даты" Margin="2, 4" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" IsVisible="{Binding IsDate}"/>
-                            <Picker ItemsSource="{Binding FormatOptions}" 
+                            <Picker ItemsSource="{Binding FormatOptions}" BackgroundColor="{StaticResource AccentLight}"
                                     SelectedIndex="{Binding SelectedFormatIndex}" 
                                     IsVisible="{Binding IsDate}" />
 
                             <!-- Picker для таблиц -->
-                            <Picker ItemsSource="{Binding Options}" SelectedItem="{Binding Value}"
-                                    IsVisible="{Binding IsPicker}" />
+                            <!-- Picker 1: выбор записи -->
+                            <Picker ItemsSource="{Binding Options}" SelectedItem="{Binding Value}" BackgroundColor="{StaticResource AccentLight}"
+                                     IsVisible="{Binding IsPicker}" />
+
+                            <!-- Picker 2: выбор колонки -->
+                            <Label Text="Вывести поле:" IsVisible="{Binding IsPicker}" Margin="0,4,0,0"
+                                     FontSize="12" TextColor="{StaticResource TextSecondary}"/>
+                            <Picker ItemsSource="{Binding ColumnOptions}" SelectedItem="{Binding SelectedColumn}" BackgroundColor="{StaticResource AccentLight}"
+                                     IsVisible="{Binding IsPicker}" />
+
 
                             <!-- TimePicker для ManualTime -->
                             <TimePicker Time="{Binding TimeValue}" IsVisible="{Binding IsTime}" TextColor="{StaticResource TextPrimary}" BackgroundColor="#7977B9" Format="HH:mm"/>

@@ -131,6 +131,9 @@ namespace EasySECv2.ViewModels
             // Получаем все группы один раз
             var allGroups = await _dbService.GetAllGroupsAsync();
             var groupDict = allGroups.ToDictionary(g => g.id, g => g.name);
+            
+            var allOrientations = await _dbService.GetAllOrientationsAsync();
+            var orientationsDict = allOrientations.ToDictionary(g => g.id, g => g.name);
             // Получаем всех студентов
             var list = await _dbService.GetStudentsAsync();
             System.Diagnostics.Debug.WriteLine($"Загрузка: {list.Count} студентов");
@@ -164,6 +167,12 @@ namespace EasySECv2.ViewModels
                     s.GroupName = groupName;
                 else
                     s.GroupName = "—";
+
+                if (orientationsDict.TryGetValue(s.orientation, out var orientationName))
+                    s.OrientationName = orientationName;
+                else
+                    s.OrientationName = "—";
+
                 System.Diagnostics.Debug.WriteLine($"Группа: {s.GroupName}");
                 Students.Add(s);
             }

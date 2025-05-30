@@ -59,7 +59,7 @@ namespace EasySECv2.Services
                             if (p.Text.Contains("[СТУДЕНТ:ФИО]"))
                             {
                                 p.ReplaceText("[СТУДЕНТ:ФИО]", "");
-                                p.Append(student.FullName);
+                                p.Append(student.FullName).Font("Times New Roman").FontSize(14);
                             }
                         }
                     }
@@ -69,6 +69,7 @@ namespace EasySECv2.Services
 
                     foreach (var mapping in template.Mappings)
                     {
+                        Debug.WriteLine("[DEBUG] Документ до замены:\n" + mapping);
                         var key = mapping.Placeholder;
                         var value = map.GetValueOrDefault(key, "");
 
@@ -154,6 +155,16 @@ namespace EasySECv2.Services
                         }
                     }
 
+                    Debug.WriteLine("[DEBUG] Документ до замены:\n" + doc.Text);
+
+                    // Лог всех замен
+                    foreach (var pair in replacements)
+                        Debug.WriteLine($"[ЗАМЕНА] [{pair.Key}] → {pair.Value}");
+
+                    // Лог всех таблиц
+                    foreach (var t in tables)
+                        Debug.WriteLine($"[ТАБЛИЦА] [{t.Key}] содержит {t.Value.RowCount} строк, {t.Value.ColumnCount} колонок");
+
                     // Один проход по всем параграфам и таблицам
                     ReplaceAllSmart(doc, replacements, tables);
 
@@ -229,8 +240,11 @@ namespace EasySECv2.Services
                     }
                     else if (replacements.TryGetValue(key, out var value))
                     {
-                        para.ReplaceText($"[{key}]", value);
+                        // Удаляем старый текст и создаем новый с нужным стилем
+                        para.ReplaceText($"[{key}]", string.Empty);
+                        para.Append(value).Font("Times New Roman").FontSize(14);
                     }
+
                 }
             }
         }
@@ -280,6 +294,12 @@ namespace EasySECv2.Services
                     MappingSourceType.ManualDate or
                     MappingSourceType.ManualTimeFull or
                     MappingSourceType.Manual => raw,
+
+                    MappingSourceType.Institute or
+                    MappingSourceType.Department or
+                    MappingSourceType.FormOfEducation or
+                    MappingSourceType.Orientation => raw,
+
                     MappingSourceType.Student or MappingSourceType.Table =>
                         dataContext?.GetType().GetProperty(m.Property)?.GetValue(dataContext)?.ToString() ?? string.Empty,
                     MappingSourceType.Group =>

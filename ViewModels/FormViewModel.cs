@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using EasySECv2.Models;
 using EasySECv2.Services;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace EasySECv2.ViewModels;
@@ -77,7 +78,7 @@ public partial class FormViewModel : ObservableObject
                     field.IsPicker = true;
                     field.isVisible = true;
                     field.Options = institutes.Select(i => i.name).ToList();
-                    field.ColumnOptions = new List<string> { "name", "shortName", "code" }; // зависит от таблицы
+                    field.ColumnOptions = new List<string> { "name", "shortName" }; // зависит от таблицы
                     field.SelectedColumn = "name"; // по умолчанию
 
                     break;
@@ -87,7 +88,7 @@ public partial class FormViewModel : ObservableObject
                     field.IsPicker = true;
                     field.isVisible = true;
                     field.Options = formList.Select(f => f.name).ToList();
-                    field.ColumnOptions = new List<string> { "name", "shortName", "code" }; // зависит от таблицы
+                    field.ColumnOptions = new List<string> { "name" }; // зависит от таблицы
                     field.SelectedColumn = "name"; // по умолчанию
 
                     break;
@@ -97,7 +98,7 @@ public partial class FormViewModel : ObservableObject
                     field.IsPicker = true;
                     field.isVisible = true;
                     field.Options = orientations.Select(o => o.name).ToList();
-                    field.ColumnOptions = new List<string> { "name", "shortName", "code" }; // зависит от таблицы
+                    field.ColumnOptions = new List<string> { "name", "code" }; // зависит от таблицы
                     field.SelectedColumn = "name"; // по умолчанию
 
                     break;
@@ -107,7 +108,7 @@ public partial class FormViewModel : ObservableObject
                     field.IsPicker = true;
                     field.isVisible = true;
                     field.Options = departments.Select(d => d.name).ToList();
-                    field.ColumnOptions = new List<string> { "name", "shortName", "code" }; // зависит от таблицы
+                    field.ColumnOptions = new List<string> { "name", "shortName"}; // зависит от таблицы
                     field.SelectedColumn = "name"; // по умолчанию
                     break;
 
@@ -122,39 +123,115 @@ public partial class FormViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Submit()
+    //private void Submit()
+    //{
+    //    var result = new Dictionary<string, string>();
+    //    foreach (var f in Fields)
+    //    {
+    //        string value;
+
+    //        if (f.IsDate)
+    //        {
+    //            string realFormat = f.FormatMap.ElementAtOrDefault(f.SelectedFormatIndex).Key;
+    //            value = f.DateValue.ToString(realFormat, new CultureInfo("ru-RU"));
+    //        }
+    //        else if (f.IsTime)
+    //        {
+    //            string realFormat = f.FormatMap.ElementAtOrDefault(f.SelectedFormatIndex).Key;
+    //            value = DateTime.Today.Add(f.TimeValue).ToString(realFormat);
+    //        }
+    //        else
+    //        {
+    //            value = f.Value;
+    //        }
+
+    //        if (f.SourceType == MappingSourceType.ManualText)
+    //        {
+    //            result[f.Placeholder] = f.Value; // сам текст
+    //            result[$"{f.Placeholder}__min"] = f.MinLines.ToString(); // мин. строки
+    //        }
+    //        else
+    //        {
+    //            result[f.Placeholder] = value;
+    //        }
+
+
+    //    }
+
+    //    _tcs.TrySetResult(result);
+    //}
+    private async void Submit()
     {
         var result = new Dictionary<string, string>();
+        var db = MauiProgram.GetService<DatabaseService>();
+
         foreach (var f in Fields)
         {
-            string value;
+            string value = f.Value;
 
+            // Форматирование даты
             if (f.IsDate)
             {
                 string realFormat = f.FormatMap.ElementAtOrDefault(f.SelectedFormatIndex).Key;
                 value = f.DateValue.ToString(realFormat, new CultureInfo("ru-RU"));
             }
+            // Форматирование времени
             else if (f.IsTime)
             {
                 string realFormat = f.FormatMap.ElementAtOrDefault(f.SelectedFormatIndex).Key;
                 value = DateTime.Today.Add(f.TimeValue).ToString(realFormat);
             }
-            else
-            {
-                value = f.Value;
-            }
 
+            // Спец. случай — длинный текст с мин. строками
             if (f.SourceType == MappingSourceType.ManualText)
             {
-                result[f.Placeholder] = f.Value; // сам текст
-                result[$"{f.Placeholder}__min"] = f.MinLines.ToString(); // мин. строки
+                result[f.Placeholder] = f.Value;
+                result[$"{f.Placeholder}__min"] = f.MinLines.ToString();
+                continue;
             }
-            else
+
+            // Обработка справочных таблиц с выбором колонки
+            if (f.IsPicker && !string.IsNullOrEmpty(f.SelectedColumn))
             {
-                result[f.Placeholder] = value;
+                object? match = null;
+
+                switch (f.SourceType)
+                {
+                    case MappingSourceType.Institute:
+                        match = (await db.GetAllInstitutesAsync()).FirstOrDefault(i => i.name == f.Value);
+                        break;
+
+                    case MappingSourceType.Department:
+                        match = (await db.GetAllDepartmentsAsync()).FirstOrDefault(d => d.name == f.Value);
+                        break;
+
+                    case MappingSourceType.FormOfEducation:
+                        match = (await db.GetAllFormsOfEducationAsync()).FirstOrDefault(foe => foe.name == f.Value);
+                        break;
+
+                    case MappingSourceType.Orientation:
+                        match = (await db.GetAllOrientationsAsync()).FirstOrDefault(o => o.name == f.Value);
+                        break;
+
+                        // Добавляй другие таблицы здесь по аналогии
+                }
+
+                if (match != null)
+                {
+                    var prop = match.GetType().GetProperty(f.SelectedColumn);
+                    if (prop != null)
+                    {
+                        var extracted = prop.GetValue(match)?.ToString() ?? "";
+                        Debug.WriteLine($"f.Placeholder = {f.Placeholder} extracted = {extracted}");
+                        result[f.Placeholder] = extracted;
+                        continue;
+                    }
+                }
             }
 
-
+            // Обычная запись
+            Debug.WriteLine($"f.Placeholder = {f.Placeholder} val = {value}");
+            result[f.Placeholder] = value;
         }
 
         _tcs.TrySetResult(result);

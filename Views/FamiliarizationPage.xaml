@@ -33,13 +33,32 @@
             <CollectionView ItemsSource="{Binding FilteredGroups}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="m:SelectableGroup">
-                        <HorizontalStackLayout Spacing="12" IsVisible="{Binding IsVisible}">
-                            <Label Text="{Binding Group.name}" VerticalOptions="Center" />
+                        <Grid ColumnDefinitions="Auto, *, Auto"
+                              IsVisible="{Binding IsVisible}" BackgroundColor="White"
+                              Padding="0,4">
+
+                            <!-- Название группы слева, обёрнуто в Border -->
+                            <Border Stroke="{StaticResource PrimaryLight}" 
+                                    StrokeThickness="1" 
+                                    BackgroundColor="{StaticResource BackgroundAlt}"
+                                    Padding="8,4"
+                                    Grid.Column="0" WidthRequest="200"
+                                    VerticalOptions="Center">
+
+                                <Label Text="{Binding Group.name}" 
+                                       VerticalOptions="Center"
+                                       TextColor="{StaticResource TextPrimary}" WidthRequest="180"/>
+                            </Border>
+
+                            <!-- Кнопка справа -->
                             <Button Text="Сгенерировать протокол"
-                Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FamiliarizationViewModel}}, Path=GenerateCommand}"
-                CommandParameter="{Binding Group}"
-                IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FamiliarizationViewModel}}, Path=CanGenerate}" />
-                        </HorizontalStackLayout>
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FamiliarizationViewModel}}, Path=GenerateCommand}"
+                                    CommandParameter="{Binding Group}"
+                                    IsEnabled="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:FamiliarizationViewModel}}, Path=CanGenerate}"
+                                    Grid.Column="2" />
+                        </Grid>
+
+
                     </DataTemplate>
 
                 </CollectionView.ItemTemplate>

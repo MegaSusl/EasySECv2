@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Class="EasySECv2.Views.EventPopup"
+               x:Name="Root"
+               CanBeDismissedByTappingOutsideOfPopup="False"
+               Color="#00000000">
+
+    <Frame BackgroundColor="White"
+           BorderColor="{StaticResource PrimaryLight}"
+           CornerRadius="12"
+           Padding="20"
+           WidthRequest="400"
+           HeightRequest="480"
+           HorizontalOptions="Center"
+           VerticalOptions="Center"
+           HasShadow="True">
+
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="20">
+            <!-- Кнопка закрытия (крестик) -->
+            <Button Text="✕"
+                    BackgroundColor="#FFCCCC"
+                    TextColor="Red"
+                    HorizontalOptions="End"
+                    Clicked="OnCancelClicked"
+                    FontSize="18"
+                    Padding="0"
+                    HeightRequest="24"
+                    WidthRequest="24"
+                    Grid.Row="0" />
+
+            <!-- Заголовок -->
+            <Label Text="{Binding HeaderText}" FontSize="22" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}" Grid.Row="1" />
+
+            <!-- Поле Названия -->
+            <VerticalStackLayout Grid.Row="2">
+                <Label Text="Название события" FontSize="14" TextColor="{StaticResource TextPrimary}"/>
+                <Entry Text="{Binding Title, Mode=TwoWay}"
+                       Placeholder="Введите название..."
+                       BackgroundColor="{StaticResource BackgroundAlt}"
+                       TextColor="{StaticResource TextPrimary}" />
+            </VerticalStackLayout>
+
+            <!-- Поле Даты -->
+            <VerticalStackLayout Grid.Row="3">
+                <Label Text="Крайний срок" FontSize="14" TextColor="{StaticResource TextPrimary}"/>
+                <DatePicker Date="{Binding Deadline, Mode=TwoWay}"
+                            BackgroundColor="{StaticResource BackgroundAlt}"
+                            TextColor="{StaticResource TextPrimary}" />
+            </VerticalStackLayout>
+
+            <!-- Поле Описания -->
+            <VerticalStackLayout Grid.Row="4">
+                <Label Text="Описание" FontSize="14" TextColor="{StaticResource TextPrimary}"/>
+                <Editor Text="{Binding Description, Mode=TwoWay}"
+                        HeightRequest="80"                        
+                        BackgroundColor="{StaticResource BackgroundAlt}"
+                        TextColor="{StaticResource TextPrimary}" />
+            </VerticalStackLayout>
+
+            <!-- Кнопка действия -->
+            <Button Text="{Binding ActionButtonText}"
+                    Grid.Row="5"
+                    Margin="0,10,0,0"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    CornerRadius="10"
+                    FontSize="16"
+                    Clicked="OnConfirmClicked" />
+
+        </Grid>
+    </Frame>
+</toolkit:Popup>
