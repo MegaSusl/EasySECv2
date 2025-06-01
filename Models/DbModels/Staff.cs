@@ -8,44 +8,45 @@ namespace EasySECv2.Models
     {
         [PrimaryKey, AutoIncrement]
         [Editable("ID", Order = 0, ControlType = "Entry")]
-        public long id { get; set; }
+        public long Id { get; set; }
 
         [NotNull]
         [Editable("Имя", Order = 20)]
-        public string name { get; set; }
+        public string Name { get; set; }
 
         [NotNull]
         [Editable("Фамилия", Order = 10)]
-        public string surname { get; set; }
+        public string Surname { get; set; }
 
         [Editable("Отчество", Order = 30)]
-        public string middleName { get; set; }
+        public string MiddleName { get; set; }
 
-        //[Editable("Должность", Order = 40)]
-        public string job { get; set; }
+        [Editable("Должность", Order = 40)]
+        public string Position { get; set; }
 
         [Editable("Ученая степень", Order = 50)]
-        public string degree { get; set; }
+        public string Degree { get; set; }
         
         [Editable("Ученая звание", Order = 60)]
-        public string degreeRank { get; set; }
+        public string DegreeRank { get; set; }
 
         [Editable("Награды", Order = 70)]
-        public string degreeAwards { get; set; }
+        public string DegreeAwards { get; set; }
+        [Editable("Является гостем", Order = 80)]
+        public bool IsGuest { get; set; }
+        [Editable("Является дипломным руководителем", Order = 90)]
+        public bool IsSupervisor { get; set; }
 
-        [Indexed]
-        [Editable("Должность", Order = 40)]
-        public long position { get; set; }
     }
     public partial class Staff
     {
         // Чтобы sqlite‑net не пытался мапить это свойство в столбец
         [Ignore]
         public string FullName
-            => $"{surname} {name}{(string.IsNullOrWhiteSpace(middleName) ? "" : $" {middleName}")}";
+            => $"{Surname} {Name}{(string.IsNullOrWhiteSpace(MiddleName) ? "" : $" {MiddleName}")}";
         [Ignore]
-        public string email { get; set; }
+        public string Email { get; set; }
         [Ignore]
-        public string phone { get; set; }
+        public string Phone { get; set; }
     }
 }

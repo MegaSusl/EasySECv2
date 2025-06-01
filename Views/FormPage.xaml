@@ -59,6 +59,49 @@
                             <!--<dtp:DateTimePicker x:Name="timePicker"-->
                                                 <!--IsVisible="{Binding IsTime}" ShowMinuteSpinner="True" ShowMonthSpinner="False" ShowHourSpinner="False" ShowDaySpinner="False" ShowSecondSpinner="False"/>-->
                             
+                            <!-- Председатель ГЭК -->
+                            <StackLayout IsVisible="{Binding IsChairmanSelector}">
+                                <Label Text="Выберите председателя ГЭК:" FontAttributes="Bold" Margin="0,6,0,2" TextColor="{StaticResource TextPrimary}" />
+                                <Picker ItemsSource="{Binding AllStaff}"
+                                        ItemDisplayBinding="{Binding FullName}"
+                                        SelectedItem="{Binding SelectedChairman, Mode=TwoWay}"
+                                        BackgroundColor="{StaticResource AccentLight}" />
+                            </StackLayout>
+
+                            <!-- Члены и секретарь ГЭК -->
+                            <StackLayout IsVisible="{Binding IsMemberAndSecretarySelector}">
+                                <Label Text="Выберите секретаря ГЭК:" FontAttributes="Bold" Margin="0,6,0,2" TextColor="{StaticResource TextPrimary}" />
+                                <Picker ItemsSource="{Binding SecretaryCandidates}"
+                                        ItemDisplayBinding="{Binding FullName}"
+                                        SelectedItem="{Binding SelectedSecretary, Mode=TwoWay}"
+                                        BackgroundColor="{StaticResource AccentLight}" />
+
+                                <Label Text="Члены ГЭК:" FontAttributes="Bold" Margin="0,10,0,4" TextColor="{StaticResource TextPrimary}" />
+                                <CollectionView ItemsSource="{Binding MemberPickers}" SelectionMode="None" BackgroundColor="White">
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Picker ItemsSource="{Binding StaffOptions}"
+                                                    ItemDisplayBinding="{Binding FullName}"
+                                                    SelectedItem="{Binding SelectedStaff, Mode=TwoWay}"
+                                                    BackgroundColor="{StaticResource AccentLight}" />
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                    <CollectionView.ItemsLayout>
+                                        <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                                    </CollectionView.ItemsLayout>
+                                </CollectionView>
+
+                                <Button Text="Добавить члена" x:Name="AddMemberBtn"
+                                        Clicked="OnAddMemberClicked"
+                                        WidthRequest="200"
+                                        HorizontalOptions="Start"
+                                        Margin="0,10,0,0" />
+                            </StackLayout>
+
+
+
+
+
                         </VerticalStackLayout>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

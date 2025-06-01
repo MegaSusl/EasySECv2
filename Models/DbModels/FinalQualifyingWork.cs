@@ -6,32 +6,28 @@ namespace EasySECv2.Models
     public class FinalQualifyingWork
     {
         [PrimaryKey, AutoIncrement]
-        public long id { get; set; }
+        public long Id { get; set; }
 
-        public string topic { get; set; }
-
-        [Indexed]
-        public long studentId { get; set; }
+        public string Topic { get; set; }
 
         [Indexed]
-        public long supervisorId { get; set; }
+        public long StudentId { get; set; }
 
-        public int mark { get; set; }
+        [Indexed]
+        public long SupervisorId { get; set; }
 
-        public string recomendation { get; set; }
+        public int Mark { get; set; }
 
-        public string recomendation2 { get; set; }
+        public string Questions { get; set; }
 
-        public string questions { get; set; }
+        public string Description { get; set; }
 
-        public string description { get; set; }
+        public string Disadvantages { get; set; }
 
-        public string disadvantage { get; set; }
+        public string AddInfo { get; set; }
 
-        public string addInfo { get; set; }
+        public DateTime Date { get; set; }
 
-        public DateTime dateTime { get; set; }
-
-        public bool attended { get; set; }
+        public bool IsAttended { get; set; }
     }
 }

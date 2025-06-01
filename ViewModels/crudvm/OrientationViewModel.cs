@@ -71,7 +71,7 @@ namespace EasySECv2.ViewModels
             AllItems.Clear();
             foreach (var item in list)
             {
-                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.Name}");
                 AllItems.Add(item);
             }
             ApplyFilter();
@@ -82,8 +82,8 @@ namespace EasySECv2.ViewModels
             Filtered.Clear();
             foreach (var item in AllItems.Where(o =>
                          string.IsNullOrWhiteSpace(SearchQuery)
-                         || (o.name?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
-                         || (o.code?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)))
+                         || (o.Name?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                         || (o.Code?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)))
             {
                 Filtered.Add(item);
             }
@@ -101,7 +101,7 @@ namespace EasySECv2.ViewModels
         void OnEdit(Orientation item)
         {
             if (item == null) return;
-            Shell.Current.GoToAsync($"{nameof(EditOrientationPage)}?id={item.id}");
+            Shell.Current.GoToAsync($"{nameof(EditOrientationPage)}?id={item.Id}");
         }
 
         async void OnDelete(Orientation item)
@@ -109,7 +109,7 @@ namespace EasySECv2.ViewModels
             if (item == null) return;
             bool ok = await Application.Current.MainPage.DisplayAlert(
                 "Удалить запись",
-                $"Удалить направление «{item.name} ({item.code})»?",
+                $"Удалить направление «{item.Name} ({item.Code})»?",
                 "Да", "Нет");
             if (!ok) return;
 

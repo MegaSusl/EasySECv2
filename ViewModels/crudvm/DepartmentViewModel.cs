@@ -71,7 +71,7 @@ namespace EasySECv2.ViewModels
             AllItems.Clear();
             foreach (var item in list)
             {
-                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.Name}");
                 AllItems.Add(item);
             }
             ApplyFilter();
@@ -82,7 +82,7 @@ namespace EasySECv2.ViewModels
             Filtered.Clear();
             foreach (var item in AllItems.Where(d =>
                          string.IsNullOrWhiteSpace(SearchQuery)
-                         || (d.name?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)))
+                         || (d.Name?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)))
             {
                 Filtered.Add(item);
             }
@@ -100,7 +100,7 @@ namespace EasySECv2.ViewModels
         void OnEdit(Department item)
         {
             if (item == null) return;
-            Shell.Current.GoToAsync($"{nameof(EditDepartmentPage)}?id={item.id}");
+            Shell.Current.GoToAsync($"{nameof(EditDepartmentPage)}?id={item.Id}");
         }
 
         async void OnDelete(Department item)
@@ -108,7 +108,7 @@ namespace EasySECv2.ViewModels
             if (item == null) return;
             bool ok = await Application.Current.MainPage.DisplayAlert(
                 "Удалить запись",
-                $"Удалить кафедру «{item.name}»?",
+                $"Удалить кафедру «{item.Name}»?",
                 "Да", "Нет");
             if (!ok) return;
 

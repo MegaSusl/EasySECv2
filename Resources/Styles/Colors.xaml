@@ -33,6 +33,7 @@
 
     <!-- Оттенки для текста и фонов -->
     <Color x:Key="Background">#FFFFFF</Color>
+    <Color x:Key="PageBackground">#FFFFFF</Color>
     <Color x:Key="BackgroundAlt">#FFF5F5</Color>
     <!-- совсем лёгкий розоватый -->
     <Color x:Key="Surface">#FFFFFF</Color>

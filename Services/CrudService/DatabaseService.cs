@@ -3,6 +3,7 @@ using SQLite;
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Reflection;
+using System.Diagnostics;
 
 namespace EasySECv2.Services
 {
@@ -12,7 +13,11 @@ namespace EasySECv2.Services
 
         public DatabaseService(string dbPath)
         {
-            _database = new SQLiteAsyncConnection(dbPath);
+            var flags = SQLiteOpenFlags.ReadWrite |
+            SQLiteOpenFlags.Create |
+            SQLiteOpenFlags.SharedCache;
+
+            _database = new SQLiteAsyncConnection(dbPath, flags);
             InitializeDatabase();
         }
 
@@ -22,7 +27,7 @@ namespace EasySECv2.Services
             var initTask = InitializeAsync();
             initTask.ConfigureAwait(false);
             initTask.GetAwaiter().GetResult();
-            System.Diagnostics.Debug.WriteLine("Database initialized at: " + _database.DatabasePath);
+            Trace.WriteLine("Database initialized at: " + _database.DatabasePath);
         }
 
         // Здесь создаём все таблицы и заливаем seed-данные
@@ -34,10 +39,10 @@ namespace EasySECv2.Services
             await _database.CreateTableAsync<FormOfEducation>().ConfigureAwait(false);
             await _database.CreateTableAsync<Institute>().ConfigureAwait(false);
             await _database.CreateTableAsync<Department>().ConfigureAwait(false);
-            await _database.CreateTableAsync<Position>().ConfigureAwait(false);
             await _database.CreateTableAsync<Student>().ConfigureAwait(false);
             await _database.CreateTableAsync<Staff>().ConfigureAwait(false);
             await _database.CreateTableAsync<FinalQualifyingWork>().ConfigureAwait(false);
+            await _database.CreateTableAsync<Room>().ConfigureAwait(false);
 
             await SeedOrientationsIfNeededAsync().ConfigureAwait(false);
         }
@@ -67,8 +72,8 @@ namespace EasySECv2.Services
                 // 3) Преобразовать в список Orientation
                 var list = dict.Select(kvp => new Orientation
                 {
-                    code = kvp.Key,
-                    name = kvp.Value
+                    Code = kvp.Key,
+                    Name = kvp.Value
                 }).ToList();
 
                 // 4) Вставить все за один раз
@@ -99,15 +104,15 @@ namespace EasySECv2.Services
 
         public async Task<long> SaveGroupAsync(Group group)
         {
-            if (group.id != 0)
+            if (group.Id != 0)
             {
                 await _database.UpdateAsync(group).ConfigureAwait(false);
-                return group.id;
+                return group.Id;
             }
             else
             {
                 await _database.InsertAsync(group).ConfigureAwait(false);
-                return group.id;
+                return group.Id;
             }
         }
 
@@ -158,25 +163,25 @@ namespace EasySECv2.Services
         }
 
         // Departments
-        public Task SaveDepartmentAsync(Department d) => d.id == 0 ? _database.InsertAsync(d) : _database.UpdateAsync(d);
+        public Task SaveDepartmentAsync(Department d) => d.Id == 0 ? _database.InsertAsync(d) : _database.UpdateAsync(d);
         public Task DeleteDepartmentAsync(Department d) => _database.DeleteAsync(d);
 
         // Orientations
-        public Task SaveOrientationAsync(Orientation o) => o.id == 0 ? _database.InsertAsync(o) : _database.UpdateAsync(o);
+        public Task SaveOrientationAsync(Orientation o) => o.Id == 0 ? _database.InsertAsync(o) : _database.UpdateAsync(o);
         public Task DeleteOrientationAsync(Orientation o) => _database.DeleteAsync(o);
 
         // Institutes
         public Task<List<Institute>> GetAllInstitutesAsync() => _database.Table<Institute>().ToListAsync();
-        public Task SaveInstituteAsync(Institute i) => i.id == 0 ? _database.InsertAsync(i) : _database.UpdateAsync(i);
+        public Task SaveInstituteAsync(Institute i) => i.Id == 0 ? _database.InsertAsync(i) : _database.UpdateAsync(i);
         public Task DeleteInstituteAsync(Institute i) => _database.DeleteAsync(i);
 
         // Forms of Education
         public Task<List<FormOfEducation>> GetAllFormsOfEducationAsync() => _database.Table<FormOfEducation>().ToListAsync();
-        public Task SaveFormOfEducationAsync(FormOfEducation f) => f.id == 0 ? _database.InsertAsync(f) : _database.UpdateAsync(f);
+        public Task SaveFormOfEducationAsync(FormOfEducation f) => f.Id == 0 ? _database.InsertAsync(f) : _database.UpdateAsync(f);
         public Task DeleteFormOfEducationAsync(FormOfEducation f) => _database.DeleteAsync(f);
 
         public Task<List<Staff>> GetAllStaffAsync() => _database.Table<Staff>().ToListAsync();
-        public Task SaveStaffAsync(Staff f) => f.id == 0 ? _database.InsertAsync(f) : _database.UpdateAsync(f);
+        public Task SaveStaffAsync(Staff f) => f.Id == 0 ? _database.InsertAsync(f) : _database.UpdateAsync(f);
         public Task DeleteStaffAsync(Staff f) => _database.DeleteAsync(f);
         public ICrudService<Student> Students => new CrudService<Student>(
             _database,
@@ -189,7 +194,7 @@ namespace EasySECv2.Services
         public ICrudService<FormOfEducation> FormOfEducation => new CrudService<FormOfEducation>(
             _database,
             conn => conn.Table<FormOfEducation>(),
-            (db, item) => item.id == 0
+            (db, item) => item.Id == 0
                 ? db.InsertAsync(item)
                 : db.UpdateAsync(item),
             (db, item) => db.DeleteAsync(item)
@@ -271,24 +276,6 @@ namespace EasySECv2.Services
 
         #endregion
 
-
-        // ---------- Должности персонала ----------
-        #region Positions
-
-        public Task<List<Position>> GetAllPositionsAsync()
-            => _database.Table<Position>().ToListAsync();
-
-        public Task SavePositionAsync(Position p)
-            => p.id == 0
-                ? _database.InsertAsync(p)
-                : _database.UpdateAsync(p);
-
-        public Task DeletePositionAsync(Position p)
-            => _database.DeleteAsync(p);
-
-        #endregion
-
-
         // ---------- Выпускные квалификационные работы ----------
         #region FinalQualifyingWork
 
@@ -296,7 +283,7 @@ namespace EasySECv2.Services
             => _database.Table<FinalQualifyingWork>().ToListAsync();
 
         public Task SaveFinalQualifyingWorkAsync(FinalQualifyingWork w)
-            => w.id == 0
+            => w.Id == 0
                 ? _database.InsertAsync(w)
                 : _database.UpdateAsync(w);
 
@@ -304,6 +291,28 @@ namespace EasySECv2.Services
             => _database.DeleteAsync(w);
 
         #endregion
+
+        // ---------- Аудитории ----------  
+        #region Rooms
+
+        public Task<List<Room>> GetAllRoomsAsync()
+            => _database.Table<Room>().ToListAsync();
+
+        public Task SaveRoomAsync(Room room)
+            => room.Id == 0
+                ? _database.InsertAsync(room)
+                : _database.UpdateAsync(room);
+
+        public Task DeleteRoomAsync(Room room)
+            => _database.DeleteAsync(room);
+
+        #endregion
+        public async Task<Staff?> GetStaffByIdAsync(long id)
+        {
+            return await _database.Table<Staff>()
+                .Where(s => s.Id == id)
+                .FirstOrDefaultAsync();
+        }
 
     }
 }

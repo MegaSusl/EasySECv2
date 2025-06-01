@@ -74,7 +74,7 @@ namespace EasySECv2.ViewModels
             AllItems.Clear();
             foreach (var item in list)
             {
-                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.Name}");
                 AllItems.Add(item);
             }
             ApplyFilter();
@@ -85,9 +85,9 @@ namespace EasySECv2.ViewModels
             Filtered.Clear();
             foreach (var item in AllItems
                 .Where(i => string.IsNullOrWhiteSpace(SearchQuery)
-                         || i.name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
+                         || i.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)))
             {
-                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.Name}");
                 Filtered.Add(item);
             }
             MainThread.BeginInvokeOnMainThread(() =>
@@ -105,7 +105,7 @@ namespace EasySECv2.ViewModels
         void OnEdit(FormOfEducation item)
         {
             if (item == null) return;
-            Shell.Current.GoToAsync($"{nameof(EditFormOfEducationPage)}?id={item.id}");
+            Shell.Current.GoToAsync($"{nameof(EditFormOfEducationPage)}?id={item.Id}");
         }
 
         async void OnDelete(FormOfEducation item)
@@ -113,7 +113,7 @@ namespace EasySECv2.ViewModels
             if (item == null) return;
             bool ok = await Application.Current.MainPage.DisplayAlert(
                 "Удалить запись",
-                $"Удалить форму «{item.name}»?",
+                $"Удалить форму «{item.Name}»?",
                 "Да", "Нет");
             if (!ok) return;
 

@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using EasySECv2.Views;
+using System.Diagnostics;
 
 namespace EasySECv2.ViewModels
 {
@@ -98,19 +99,26 @@ namespace EasySECv2.ViewModels
 
         public StudentsViewModel(ICrudService<Student> studentService, DatabaseService dbService, ExcelAdapter excelAdapter)
         {
+            Trace.WriteLine("Страница студенты загрузка. 1");
             _dbService = dbService;
             _excelAdapter = excelAdapter;
             _studentService = studentService;
+            Trace.WriteLine("Страница студенты загрузка. 2");
 
             AddCommand = new Command(OnAdd);
             EditCommand = new Command<Student>(OnEdit);
             DeleteCommand = new Command<Student>(OnDelete);
+            Trace.WriteLine("Страница студенты загрузка. 3");
             ImportCommand = new Command(async () => await OnImport());
+            Trace.WriteLine("Страница студенты загрузка. 4");
             RefreshCommand = new Command(async () => await LoadData());
+            Trace.WriteLine("Страница студенты загрузка. 5");
 
             // Инициализация фильтров и данных
             _ = LoadFiltersAsync();
+            Trace.WriteLine("Страница студенты загрузка. 6");
             _ = LoadData();
+            Trace.WriteLine("Страница студенты загрузка. 7");
         }
 
         private async Task LoadFiltersAsync()
@@ -130,10 +138,10 @@ namespace EasySECv2.ViewModels
         {
             // Получаем все группы один раз
             var allGroups = await _dbService.GetAllGroupsAsync();
-            var groupDict = allGroups.ToDictionary(g => g.id, g => g.name);
+            var groupDict = allGroups.ToDictionary(g => g.Id, g => g.Name);
             
             var allOrientations = await _dbService.GetAllOrientationsAsync();
-            var orientationsDict = allOrientations.ToDictionary(g => g.id, g => g.name);
+            var orientationsDict = allOrientations.ToDictionary(g => g.Id, g => g.Name);
             // Получаем всех студентов
             var list = await _dbService.GetStudentsAsync();
             System.Diagnostics.Debug.WriteLine($"Загрузка: {list.Count} студентов");
@@ -145,10 +153,10 @@ namespace EasySECv2.ViewModels
                     .ToList();
 
             if (SelectedGroup != null)
-                list = list.Where(s => s.groupId == SelectedGroup.id).ToList();
+                list = list.Where(s => s.groupId == SelectedGroup.Id).ToList();
 
             if (SelectedOrientation != null)
-                list = list.Where(s => s.orientation == SelectedOrientation.id).ToList();
+                list = list.Where(s => s.orientation == SelectedOrientation.Id).ToList();
 
             // Сортировка
             list = SelectedSortOption switch
@@ -177,9 +185,18 @@ namespace EasySECv2.ViewModels
                 Students.Add(s);
             }
         }
-        async void OnAdd() => await Shell.Current.GoToAsync(nameof(EditStudentPage));
-
-        async void OnEdit(Student s) => await Shell.Current.GoToAsync($"{nameof(EditStudentPage)}?id={s.id}");
+        async void OnAdd()
+        {
+            try
+            {
+                await Shell.Current.GoToAsync(nameof(EditStudentPage));
+            }
+            catch (Exception ex)
+            {
+                File.AppendAllText("fatal.log", ex.ToString());
+            }
+        }        
+async void OnEdit(Student s) => await Shell.Current.GoToAsync($"{nameof(EditStudentPage)}?id={s.id}");
 
         private async void OnDelete(Student s)
         {

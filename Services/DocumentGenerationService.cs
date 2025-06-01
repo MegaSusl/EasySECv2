@@ -12,6 +12,7 @@ using EasySECv2.Services;
 using System.Text.RegularExpressions;
 using Group = EasySECv2.Models.Group;
 using Border = Xceed.Document.NET.Border;
+using VerticalAlignment = Xceed.Document.NET.VerticalAlignment;
 
 namespace EasySECv2.Services
 {
@@ -70,6 +71,7 @@ namespace EasySECv2.Services
                     foreach (var mapping in template.Mappings)
                     {
                         Debug.WriteLine("[DEBUG] Документ до замены:\n" + mapping);
+                        Debug.WriteLine("[DEBUG] Документ до замены:\n" + mapping.SourceType.ToString());
                         var key = mapping.Placeholder;
                         var value = map.GetValueOrDefault(key, "");
 
@@ -112,7 +114,7 @@ namespace EasySECv2.Services
                         }
                         else if (mapping.SourceType == MappingSourceType.Group && data is Group group)
                         {
-                            var students = await _db.GetStudentsByGroupAsync(group.id);
+                            var students = await _db.GetStudentsByGroupAsync(group.Id);
                             var table = doc.AddTable(students.Count + 1, 3);
                             table.Alignment = Alignment.center;
                             table.SetWidths(new float[] { 100f, 300f, 200f });
@@ -149,6 +151,77 @@ namespace EasySECv2.Services
 
                             tables[key] = table;
                         }
+                        else if (mapping.SourceType == MappingSourceType.TableChairman)
+                        {
+                            Debug.WriteLine("[DEBUG] Генерация тПред1");
+                            if (map.TryGetValue(mapping.Placeholder + "_CHAIRMAN_ID", out var chairmanIdStr)
+                                && long.TryParse(chairmanIdStr, out var chairmanId))
+                            {
+                                var chairman = await _db.GetStaffByIdAsync(chairmanId);
+                                if (chairman != null)
+                                {
+                                    var chairmanTable = BuildChairmanTable(doc, chairman);
+
+                                    var placeholderParagraph = doc.Paragraphs
+                                        .FirstOrDefault(p => p.Text.Contains($"[{mapping.Placeholder}]"));
+
+                                    if (placeholderParagraph != null)
+                                    {
+                                        var anchor = placeholderParagraph.InsertParagraphAfterSelf("");
+                                        anchor.InsertTableAfterSelf(chairmanTable);
+                                        placeholderParagraph.ReplaceText($"[{mapping.Placeholder}]", "");
+                                    }
+                                }
+                            }
+                            Debug.WriteLine("[DEBUG] Генерация тПред2");
+                        }
+                        else if (mapping.SourceType == MappingSourceType.TableMembersAndSecretary)
+                        {
+                            Debug.WriteLine("[DEBUG] Генерация тСекр1");
+                            var members = new List<Staff>();
+
+                            for (int i = 1; i <= 4; i++)
+                            {
+                                var pkey = $"{mapping.Placeholder}_MEMBER{i}_ID";
+                                if (map.TryGetValue(pkey, out var idStr) && long.TryParse(idStr, out var memberId))
+                                {
+                                    var staff = await _db.GetStaffByIdAsync(memberId);
+                                    if (staff != null)
+                                        members.Add(staff);
+                                }
+                            }
+
+                            Staff? secretary = null;
+                            if (map.TryGetValue(mapping.Placeholder + "_SECRETARY_ID", out var secIdStr)
+                                && long.TryParse(secIdStr, out var secId))
+                            {
+                                secretary = await _db.GetStaffByIdAsync(secId);
+                            }
+
+                            var mainTable = BuildCommissionTable(doc, members);
+                            var placeholderParagraph = doc.Paragraphs
+                                .FirstOrDefault(p => p.Text.Contains($"[{mapping.Placeholder}]"));
+
+                            if (placeholderParagraph != null)
+                            {
+                                var afterMain = placeholderParagraph.InsertParagraphAfterSelf("");
+                                afterMain.InsertTableAfterSelf(mainTable);
+                                placeholderParagraph.ReplaceText($"[{mapping.Placeholder}]", "");
+
+                                if (secretary != null)
+                                {
+                                    var secTable = BuildCommissionTable(doc, new List<Staff>(), secretary);
+                                    var afterSec = afterMain.InsertParagraphAfterSelf("");
+                                    afterSec.InsertTableAfterSelf(secTable);
+                                }
+                            }
+                            Debug.WriteLine("[DEBUG] Генерация тСекр2");
+                        }
+
+
+
+
+
                         else
                         {
                             replacements[key] = value;
@@ -200,6 +273,149 @@ namespace EasySECv2.Services
 
             Debug.WriteLine("[Генерация] Завершено.");
         }
+        // ──────────────────────────────────────────────
+        // 1. Таблица председателя ГЭК
+        // ──────────────────────────────────────────────
+        private Table BuildChairmanTable(DocX doc, Staff chairman)
+        {
+            var t = doc.AddTable(4, 7);
+            t.Alignment = Alignment.center;
+            t.Design = TableDesign.TableGrid;
+
+            // ─ строка-0
+            t.Rows[0].MergeCells(0, 6);
+            t.Rows[0].Cells[0].Paragraphs[0]
+                .Append("Председатель ГЭК")
+                .Font("Times New Roman").FontSize(14).Bold()
+                .Alignment = Alignment.center;
+
+            // ─ строка-1 — верхние заголовки (7 ячеек пока неизменённые)
+            var r1 = t.Rows[1];
+            r1.Cells[0].Paragraphs[0].Append("Образовательная программа")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r1.Cells[1].Paragraphs[0].Append("") /* будет объединено */ .Font("Times New Roman").FontSize(14).Bold();
+            r1.Cells[2].Paragraphs[0].Append("Фамилия,\nимя, отчество")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r1.Cells[3].Paragraphs[0].Append("Основное место работы\n(субъект РФ, город), занимаемая должность")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r1.Cells[4].Paragraphs[0].Append("Учёная степень\n(серия, №, дата)")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r1.Cells[5].Paragraphs[0].Append("Учёное звание\n(серия, №, дата)")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r1.Cells[6].Paragraphs[0].Append("Почётное звание")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+
+            // ─ строка-2 — подзаголовки
+            var r2 = t.Rows[2];
+            r2.Cells[0].Paragraphs[0].Append("Шифр")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r2.Cells[1].Paragraphs[0].Append("Наименование, профиль")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+
+            // 1️⃣ СНАЧАЛА вертикально объединяем колонки 2-6 (строки 1-2)
+            for (int col = 2; col <= 6; col++)
+                t.MergeCellsInColumn(col, 1, 2);
+
+            // 2️⃣ ПОТОМ объединяем по строке 0-1 ячейки «Образоват. программа»
+            r1.MergeCells(0, 1);
+
+            // ─ строка-3 — данные
+            var vals = new[]
+            {
+        "", "",                         // шифр/профиль
+        chairman.FullName    ?? "",
+        chairman.Position     ?? "",
+        chairman.Degree       ?? "",
+        chairman.DegreeRank   ?? "",
+        chairman.DegreeAwards ?? ""
+    };
+            for (int c = 0; c < 7; c++)
+                t.Rows[3].Cells[c].Paragraphs[0]
+                    .Append(vals[c])
+                    .Font("Times New Roman").FontSize(14)
+                    .Alignment = Alignment.center;
+
+            return t;
+        }
+
+
+        // ──────────────────────────────────────────────
+        // 2. Таблица членов комиссии / секретаря
+        // ──────────────────────────────────────────────
+        private Table BuildCommissionTable(DocX doc, List<Staff> members, Staff? secretary = null)
+        {
+            var t = doc.AddTable(7, 6);
+            t.Alignment = Alignment.center;
+            t.Design = TableDesign.TableGrid;
+
+            // ─ строка-0
+            t.Rows[0].MergeCells(0, 5);
+            t.Rows[0].Cells[0].Paragraphs[0]
+                .Append(secretary == null
+                    ? "Члены ГЭК по защите выпускной квалификационной работы"
+                    : "Секретарь ГЭК по защите выпускной квалификационной работы")
+                .Font("Times New Roman").FontSize(14).Bold()
+                .Alignment = Alignment.center;
+
+            // ─ строка-1 — верхние заголовки
+            var r1 = t.Rows[1];
+            r1.Cells[0].Paragraphs[0].Append("№ п/п")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r1.Cells[1].Paragraphs[0].Append("Образовательная программа")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r1.Cells[2].Paragraphs[0].Append("")  /* объединят */
+                .Font("Times New Roman").FontSize(14).Bold();
+            r1.Cells[3].Paragraphs[0].Append("Фамилия,\nимя, отчество")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r1.Cells[4].Paragraphs[0].Append("Основное место работы,\nзанимаемая должность")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r1.Cells[5].Paragraphs[0].Append("Учёная степень,\nучёное звание")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+
+            // ─ строка-2 — подзаголовки
+            var r2 = t.Rows[2];
+            r2.Cells[1].Paragraphs[0].Append("Шифр")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+            r2.Cells[2].Paragraphs[0].Append("Наименование, профиль")
+                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+
+            // 1️⃣ СНАЧАЛА вертикальные merge-ы
+            foreach (int col in new[] { 0, 3, 4, 5 })
+                t.MergeCellsInColumn(col, 1, 2);
+
+            // 2️⃣ ПОТОМ горизонтальное объединение 1-2 столбцов
+            r1.MergeCells(1, 2);
+
+            // ─ строки-3…6
+            var people = secretary == null
+                ? members.Take(4).ToList()
+                : new List<Staff> { secretary };
+
+            for (int i = 0; i < 4; i++)
+            {
+                var row = t.Rows[i + 3];
+                var s = i < people.Count ? people[i] : null;
+
+                row.Cells[0].Paragraphs[0].Append(s != null ? (i + 1).ToString() : "")
+                    .Font("Times New Roman").FontSize(14);
+                row.Cells[1].Paragraphs[0].Append("")                          // Шифр
+                    .Font("Times New Roman").FontSize(14);
+                row.Cells[2].Paragraphs[0].Append("")                          // Наим./профиль
+                    .Font("Times New Roman").FontSize(14);
+                row.Cells[3].Paragraphs[0].Append(s?.FullName ?? "")
+                    .Font("Times New Roman").FontSize(14);
+                row.Cells[4].Paragraphs[0].Append(s?.Position ?? "")
+                    .Font("Times New Roman").FontSize(14);
+                row.Cells[5].Paragraphs[0]
+                    .Append(string.Join(", ",
+                        new[] { s?.Degree, s?.DegreeRank }
+                            .Where(v => !string.IsNullOrWhiteSpace(v))))
+                    .Font("Times New Roman").FontSize(14);
+            }
+
+            return t;
+        }
+
 
 
         private void ReplaceAllPlaceholdersWithRegex(DocX document, Dictionary<string, string> map)
@@ -277,7 +493,7 @@ namespace EasySECv2.Services
             foreach (var kvp in manualInputs)
                 doc.ReplaceText($"[{kvp.Key}]", kvp.Value);
 
-            doc.SaveAs(Path.Combine(outputDir, $"{group.name}_{template.Name}.docx"));
+            doc.SaveAs(Path.Combine(outputDir, $"{group.Name}_{template.Name}.docx"));
         }
 
         private async Task<Dictionary<string, string>> BuildMap(List<PlaceholderMapping> mappings, object dataContext, Dictionary<string, string> manual, DatabaseService db)
@@ -311,18 +527,25 @@ namespace EasySECv2.Services
 
                 //Debug.WriteLine("BUILDMAP: " + value);
                 map[m.Placeholder] = value;
+
+                if (m.SourceType is MappingSourceType.TableChairman
+                  or MappingSourceType.TableMembersAndSecretary)
+                {
+                    foreach (var kv in manual.Where(k => k.Key.StartsWith(m.Placeholder + "_")))
+                        map[kv.Key] = kv.Value;
+                }
             }
 
             return map;
         }
         private static async Task<string> BuildGroupValue(Group g, DatabaseService db)
         {
-            Debug.WriteLine($"[GroupMapping] Группа: {g.name}, ID: {g.id}");
+            Debug.WriteLine($"[GroupMapping] Группа: {g.Name}, ID: {g.Id}");
 
-            var students = await db.GetStudentsByGroupAsync(g.id);
+            var students = await db.GetStudentsByGroupAsync(g.Id);
             Debug.WriteLine($"[GroupMapping] Найдено студентов: {students.Count}");
 
-            var result = $"{g.name}; " + string.Join("; ", students.Select(s => s.FullName));
+            var result = $"{g.Name}; " + string.Join("; ", students.Select(s => s.FullName));
             Debug.WriteLine($"[GroupMapping] Сформировано значение: {result}");
 
             return result;
@@ -347,7 +570,7 @@ namespace EasySECv2.Services
 
             // 2. Имя результирующего файла
             var outPath = Path.Combine(outputDir,
-                $"Лист_ознакомления_{group.name}_{DateTime.Now:yyyyMMddHHmmss}.docx");
+                $"Лист_ознакомления_{group.Name}_{DateTime.Now:yyyyMMddHHmmss}.docx");
 
             // 3. Пока делаем простое копирование шаблона
             //using (var src = File.OpenRead(template.FilePath))       // свойство, которое реально есть в модели

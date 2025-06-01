@@ -43,7 +43,7 @@
                       BackgroundColor="{StaticResource AccentLight}"
                       PlaceholderColor="{StaticResource TextSecondary}"
                       TextColor="{StaticResource TextPrimary}"
-                      CancelButtonColor="{StaticResource AccentColor}" />
+                      CancelButtonColor="{StaticResource AccentLight}" />
 
                     <Picker
                       Grid.Column="1"
@@ -115,7 +115,7 @@
             CommandParameter="{Binding .}"
             WidthRequest="32"
             HeightRequest="32"
-            BackgroundColor="{StaticResource AccentColor}"
+            BackgroundColor="{StaticResource AccentLight}"
             TextColor="White"
             CornerRadius="4" />
                         <Button
@@ -124,7 +124,7 @@
             CommandParameter="{Binding .}"
             WidthRequest="32"
             HeightRequest="32"
-            BackgroundColor="#F44336"
+            BackgroundColor="{StaticResource Primary}"
             TextColor="White"
             CornerRadius="4" />
                     </HorizontalStackLayout>

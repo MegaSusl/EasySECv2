@@ -71,7 +71,7 @@ namespace EasySECv2.ViewModels
             AllItems.Clear();
             foreach (var item in list)
             {
-                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.name}");
+                System.Diagnostics.Debug.WriteLine($"Загрузка: {item.Name}");
                 AllItems.Add(item);
             }
             ApplyFilter();
@@ -82,8 +82,8 @@ namespace EasySECv2.ViewModels
             Filtered.Clear();
             foreach (var item in AllItems
                 .Where(i => string.IsNullOrWhiteSpace(SearchQuery)
-                         || i.name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)
-                         || (i.shortName?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)))
+                         || i.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)
+                         || (i.ShortName?.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ?? false)))
             {
                 Filtered.Add(item);
             }
@@ -101,7 +101,7 @@ namespace EasySECv2.ViewModels
         void OnEdit(Institute item)
         {
             if (item == null) return;
-            Shell.Current.GoToAsync($"{nameof(EditInstitutePage)}?id={item.id}");
+            Shell.Current.GoToAsync($"{nameof(EditInstitutePage)}?id={item.Id}");
         }
 
         async void OnDelete(Institute item)
@@ -109,7 +109,7 @@ namespace EasySECv2.ViewModels
             if (item == null) return;
             bool ok = await Application.Current.MainPage.DisplayAlert(
                 "Удалить запись",
-                $"Удалить институт «{item.name}»?",
+                $"Удалить институт «{item.Name}»?",
                 "Да", "Нет");
             if (!ok) return;
 

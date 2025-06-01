@@ -17,7 +17,9 @@
             <!-- Конвертер: если количество > 0 → true -->
             <controls:GreaterZeroToBoolConverter x:Key="GreaterZeroToBoolConverter" />
 
-            <controls:GreaterZeroToBoolConverter x:Key="BoolToSelectionModeConverter" />
+            <controls:BoolToSelectionModeConverter x:Key="BoolToSelectionModeConverter" />
+
+            <controls:NullToBoolConverter x:Key="NullToBoolConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

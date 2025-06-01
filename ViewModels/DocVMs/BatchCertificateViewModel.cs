@@ -41,7 +41,7 @@ public partial class BatchCertificateViewModel : ObservableObject
     {
         var all = await _db.GetAllGroupsAsync();
         Groups.Clear();
-        Groups.Add(new Group { id = 0, name = "— не выбрано —" });
+        Groups.Add(new Group { Id = 0, Name = "— не выбрано —" });
         foreach (var g in all)
             Groups.Add(g);
         SelectedGroup = Groups.FirstOrDefault();
@@ -69,7 +69,7 @@ public partial class BatchCertificateViewModel : ObservableObject
     private void ApplyFilters()
     {
         var filtered = _allStudents.Where(s =>
-            (SelectedGroup == null || SelectedGroup.id == 0 || s.groupId == SelectedGroup.id) &&
+            (SelectedGroup == null || SelectedGroup.Id == 0 || s.groupId == SelectedGroup.Id) &&
             (string.IsNullOrWhiteSpace(SearchQuery) || s.FullName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)));
 
         FilteredStudents.Clear();
@@ -105,7 +105,7 @@ public partial class BatchCertificateViewModel : ObservableObject
     private async Task GenerateGroupAsync()
     {
         if (SelectedGroup == null || SelectedTemplate == null) return;
-        var students = _allStudents.Where(s => s.groupId == SelectedGroup.id).ToList();
+        var students = _allStudents.Where(s => s.groupId == SelectedGroup.Id).ToList();
         var manual = new Dictionary<string, string>
         {
             { "ОЦЕНКА", "Хорошо" },
@@ -121,7 +121,7 @@ public partial class BatchCertificateViewModel : ObservableObject
     private void RefreshCanExecute()
     {
         CanGenerate = FilteredStudents.Any(s => s.IsSelected) && !string.IsNullOrEmpty(OutputFolder) && SelectedTemplate != null;
-        CanGenerateGroup = SelectedGroup != null && SelectedGroup.id != 0 && !string.IsNullOrEmpty(OutputFolder) && SelectedTemplate != null;
+        CanGenerateGroup = SelectedGroup != null && SelectedGroup.Id != 0 && !string.IsNullOrEmpty(OutputFolder) && SelectedTemplate != null;
         GenerateCommand.NotifyCanExecuteChanged();
         GenerateGroupCommand.NotifyCanExecuteChanged();
         DeleteTemplateCommand.NotifyCanExecuteChanged();

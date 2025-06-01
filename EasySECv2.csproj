@@ -76,6 +76,7 @@
 		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.70" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
 		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.11" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -91,7 +92,7 @@
 	  <MauiXaml Update="PlaceholderPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\BatchCertificatePage.xaml">
+	  <MauiXaml Update="Views\DocPages\BatchCertificatePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\CalendarPlanPage.xaml">
@@ -100,25 +101,25 @@
 	  <MauiXaml Update="Views\EventPopup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\FamiliarizationPage.xaml">
+	  <MauiXaml Update="Views\DocPages\FamiliarizationPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\FormPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\ProtocolPage.xaml">
+	  <MauiXaml Update="Views\DocPages\ProtocolPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\SecMemberReplacementPage.xaml">
+	  <MauiXaml Update="Views\DocPages\SecMemberReplacementPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\SecSecretaryReplacementPage.xaml">
+	  <MauiXaml Update="Views\DocPages\SecSecretaryReplacementPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\StateExamSchedulePage.xaml">
+	  <MauiXaml Update="Views\DocPages\StateExamSchedulePage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\StateExamScheduleUmuPage.xaml">
+	  <MauiXaml Update="Views\DocPages\StateExamScheduleUmuPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\TablePages\DepartmentPage.xaml">
@@ -157,7 +158,7 @@
 	  <MauiXaml Update="Views\TablePages\OrientationPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\SecCompositionPage.xaml">
+	  <MauiXaml Update="Views\DocPages\SecCompositionPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\SettingsPage.xaml">
@@ -169,10 +170,10 @@
 	  <MauiXaml Update="Views\TablePages\StudentsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\VkrInventoryPage.xaml">
+	  <MauiXaml Update="Views\DocPages\VkrInventoryPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Views\VkrTopicAssignmentPage.xaml">
+	  <MauiXaml Update="Views\DocPages\VkrTopicAssignmentPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

@@ -60,7 +60,7 @@ public partial class FamiliarizationViewModel : ObservableObject
     partial void OnSearchQueryChanged(string value)
     {
         foreach (var s in FilteredGroups)
-            s.IsVisible = string.IsNullOrWhiteSpace(value) || s.Group.name.Contains(value, StringComparison.OrdinalIgnoreCase);
+            s.IsVisible = string.IsNullOrWhiteSpace(value) || s.Group.Name.Contains(value, StringComparison.OrdinalIgnoreCase);
     }
 
     [RelayCommand]
@@ -88,7 +88,7 @@ public partial class FamiliarizationViewModel : ObservableObject
         await Shell.Current.Navigation.PushAsync(formPage);
         var manual = await vm.Completion;
         await Shell.Current.Navigation.PopAsync();
-        Debug.WriteLine(group.name);
+        Debug.WriteLine(group.Name);
         await _generator.GenerateDocumentsAsync(template, new List<Group> { group }, manual, OutputFolder);
     }
 

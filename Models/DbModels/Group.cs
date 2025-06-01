@@ -8,10 +8,10 @@ namespace EasySECv2.Models
     {
         [PrimaryKey, AutoIncrement]
         [Editable("ID", Order = 0, ControlType = "Entry")]
-        public long id { get; set; }
+        public long Id { get; set; }
 
         [NotNull]
         [Editable("Название", Order = 10)]
-        public string name { get; set; }
+        public string Name { get; set; }
     }
 }

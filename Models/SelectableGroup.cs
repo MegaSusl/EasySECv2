@@ -16,6 +16,6 @@ namespace EasySECv2.Models
         [ObservableProperty] private bool isSelected;
         [ObservableProperty] private bool isVisible = true;
 
-        public string DisplayName => $"{Group.name}".Trim();
+        public string DisplayName => $"{Group.Name}".Trim();
     }
 }

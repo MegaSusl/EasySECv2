@@ -15,6 +15,10 @@ using EasySECv2.WinUI;
 using DateTimePicker.MAUI;
 using Orientation = EasySECv2.Models.Orientation;
 using Microsoft.Maui.Handlers;
+using SQLitePCL;
+using System.Diagnostics;
+
+
 
 
 #if WINDOWS
@@ -26,8 +30,46 @@ namespace EasySECv2
     public static class MauiProgram
     {
         public static IServiceProvider Services { get; private set; }
+        static MauiProgram()
+        {
+            var logDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "EasySEC");
+            Directory.CreateDirectory(logDir);
+            var logFile = Path.Combine(logDir, "fatal.log");
+
+#if WINDOWS
+            // UI-ошибки только под Windows
+            Microsoft.UI.Xaml.Application.Current.UnhandledException += (s, e) =>
+            {
+                File.AppendAllText(logFile, $"[WinUI] {e.Exception}\n");
+                // e.Handled = true;  // если не хотите «красного» крэша
+            };
+#endif
+
+            // все остальные
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                File.AppendAllText(logFile, $"[AppDomain] {e.ExceptionObject}\n");
+
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                File.AppendAllText(logFile, $"[TaskScheduler] {e.Exception}\n");
+                e.SetObserved();
+            };
+        }
+
+
+
         public static MauiApp CreateMauiApp()
         {
+            // добавляем TextWriterTraceListener -> лог в той же папке, что и БД
+            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            var logDir = Path.Combine(docs, "EasySEC");
+            Directory.CreateDirectory(logDir);
+            Trace.Listeners.Add(new TextWriterTraceListener(
+                Path.Combine(logDir, "easysec.log")));
+            Trace.AutoFlush = true;
+
+            Batteries_V2.Init();
             var builder = MauiApp.CreateBuilder();
 
             builder
@@ -92,37 +134,45 @@ namespace EasySECv2
                 new CrudService<Department>(
                     sp.GetRequiredService<DatabaseService>()._database,
                     db => db.Table<Department>(),
-                    (db, it) => it.id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
+                    (db, it) => it.Id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
                     (db, it) => db.DeleteAsync(it)
                 ));
             builder.Services.AddSingleton<ICrudService<Orientation>>(sp =>
                 new CrudService<Orientation>(
                     sp.GetRequiredService<DatabaseService>()._database,
                     db => db.Table<Orientation>(),
-                    (db, it) => it.id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
+                    (db, it) => it.Id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
                     (db, it) => db.DeleteAsync(it)
                 ));
             builder.Services.AddSingleton<ICrudService<Institute>>(sp =>
                 new CrudService<Institute>(
                     sp.GetRequiredService<DatabaseService>()._database,
                     db => db.Table<Institute>(),
-                    (db, it) => it.id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
+                    (db, it) => it.Id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
                     (db, it) => db.DeleteAsync(it)
                 ));
             builder.Services.AddSingleton<ICrudService<FormOfEducation>>(sp =>
                 new CrudService<FormOfEducation>(
                     sp.GetRequiredService<DatabaseService>()._database,
                     db => db.Table<FormOfEducation>(),
-                    (db, it) => it.id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
+                    (db, it) => it.Id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
                     (db, it) => db.DeleteAsync(it)
                 ));
             builder.Services.AddSingleton<ICrudService<Staff>>(sp =>
                 new CrudService<Staff>(
                     sp.GetRequiredService<DatabaseService>()._database,
                     db => db.Table<Staff>(),
-                    (db, it) => it.id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
+                    (db, it) => it.Id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
                     (db, it) => db.DeleteAsync(it)
                 ));
+            builder.Services.AddSingleton<ICrudService<Room>>(sp =>
+                new CrudService<Room>(
+                    sp.GetRequiredService<DatabaseService>()._database,
+                    db => db.Table<Room>(),
+                    (db, it) => it.Id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
+                    (db, it) => db.DeleteAsync(it)
+                ));
+
             //
             // 4) «Страницы-списки» и их VM
             //

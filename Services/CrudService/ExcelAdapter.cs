@@ -40,11 +40,11 @@ namespace EasySECv2.Services
                     {
                         var groupName = reader.GetString(4) ?? "";
                         var all = await _databaseService.GetAllGroupsAsync();
-                        var exist = all.FirstOrDefault(g => g.name == groupName);
+                        var exist = all.FirstOrDefault(g => g.Name == groupName);
                         if (exist != null)
-                            groupId = exist.id;
+                            groupId = exist.Id;
                         else
-                            groupId = await _databaseService.SaveGroupAsync(new Group { name = groupName });
+                            groupId = await _databaseService.SaveGroupAsync(new Group { Name = groupName });
                     }
 
                     // создаём студента

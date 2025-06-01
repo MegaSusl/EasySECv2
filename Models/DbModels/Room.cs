@@ -3,15 +3,15 @@ using SQLite;
 
 namespace EasySECv2.Models
 {
-    [Table("position")]
-    public class Position
+    [Table("room")]
+    public class Room
     {
         [PrimaryKey, AutoIncrement]
         [Editable("ID", Order = 0, ControlType = "Entry")]
-        public long id { get; set; }
+        public long Id { get; set; }
 
         [NotNull]
-        [Editable("Должность", Order = 10)]
-        public string name { get; set; }
+        [Editable("Номер", Order = 10, ControlType = "Entry")]
+        public string Name { get; set; }
     }
 }

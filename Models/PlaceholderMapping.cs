@@ -30,6 +30,10 @@ namespace EasySECv2.Models
         Department,
         Staff,
         Student,    // данные из таблицы студентов
+
+        TableMembersAndSecretary,     // [ТАБЛИЦА_ПРЕДСЕДАТЕЛЬ]
+        TableChairman,      // [ТАБЛИЦА_ЧЛЕНЫ]        
+
     }
 
 }

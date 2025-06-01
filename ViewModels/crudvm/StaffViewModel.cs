@@ -79,7 +79,7 @@ namespace EasySECv2.ViewModels
             Filtered.Clear();
             foreach (var item in AllItems.Where(s =>
                          string.IsNullOrWhiteSpace(SearchQuery)
-                         || ($"{s.surname} {s.name} {s.middleName}".Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))))
+                         || ($"{s.Surname} {s.Name} {s.MiddleName}".Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))))
                 Filtered.Add(item);
 
             MainThread.BeginInvokeOnMainThread(() =>
@@ -96,7 +96,7 @@ namespace EasySECv2.ViewModels
         void OnEdit(Staff item)
         {
             if (item == null) return;
-            Shell.Current.GoToAsync($"{nameof(EditStaffPage)}?id={item.id}");
+            Shell.Current.GoToAsync($"{nameof(EditStaffPage)}?id={item.Id}");
         }
 
         async void OnDelete(Staff item)
@@ -104,7 +104,7 @@ namespace EasySECv2.ViewModels
             if (item == null) return;
             bool ok = await Application.Current.MainPage.DisplayAlert(
                 "Удалить запись",
-                $"Удалить сотрудника «{item.surname} {item.name}»?",
+                $"Удалить сотрудника «{item.Surname} {item.Name}»?",
                 "Да", "Нет");
             if (!ok) return;
 
