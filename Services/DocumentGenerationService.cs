@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using Group = EasySECv2.Models.Group;
 using Border = Xceed.Document.NET.Border;
 using VerticalAlignment = Xceed.Document.NET.VerticalAlignment;
+using Microsoft.Maui.Storage;
 
 namespace EasySECv2.Services
 {
@@ -50,6 +51,8 @@ namespace EasySECv2.Services
                 try
                 {
                     var map = await BuildMap(template.Mappings, data, manualInputs, _db);
+
+                    foreach (var m in map) { Debug.WriteLine("[DEBUG] ЗНАЧЕНИЯ " + m.Key + m.Value); }                    
                     using var doc = DocX.Load(template.LocalPath);
 
                     // Спец-обработка для студента
@@ -67,7 +70,7 @@ namespace EasySECv2.Services
 
                     var replacements = new Dictionary<string, string>();
                     var tables = new Dictionary<string, Table>();
-
+                    foreach (var mapping in template.Mappings) { Debug.WriteLine("[DEBUG] ЗНАЧЕНИЯ " + map.GetValueOrDefault(mapping.Placeholder, "") + mapping.Placeholder); }
                     foreach (var mapping in template.Mappings)
                     {
                         Debug.WriteLine("[DEBUG] Документ до замены:\n" + mapping);
@@ -154,74 +157,78 @@ namespace EasySECv2.Services
                         else if (mapping.SourceType == MappingSourceType.TableChairman)
                         {
                             Debug.WriteLine("[DEBUG] Генерация тПред1");
-                            if (map.TryGetValue(mapping.Placeholder + "_CHAIRMAN_ID", out var chairmanIdStr)
+
+                            if (map.TryGetValue(key + "_CHAIRMAN_ID", out var chairmanIdStr)
                                 && long.TryParse(chairmanIdStr, out var chairmanId))
                             {
                                 var chairman = await _db.GetStaffByIdAsync(chairmanId);
                                 if (chairman != null)
                                 {
+                                    // Вместо немедленной вставки — просто кладём в словарь
                                     var chairmanTable = BuildChairmanTable(doc, chairman);
-
-                                    var placeholderParagraph = doc.Paragraphs
-                                        .FirstOrDefault(p => p.Text.Contains($"[{mapping.Placeholder}]"));
-
-                                    if (placeholderParagraph != null)
-                                    {
-                                        var anchor = placeholderParagraph.InsertParagraphAfterSelf("");
-                                        anchor.InsertTableAfterSelf(chairmanTable);
-                                        placeholderParagraph.ReplaceText($"[{mapping.Placeholder}]", "");
-                                    }
+                                    tables[key] = chairmanTable;
                                 }
                             }
+
                             Debug.WriteLine("[DEBUG] Генерация тПред2");
                         }
                         else if (mapping.SourceType == MappingSourceType.TableMembersAndSecretary)
                         {
                             Debug.WriteLine("[DEBUG] Генерация тСекр1");
-                            var members = new List<Staff>();
 
+                            // Собираем список членов
+                            var members = new List<Staff>();
                             for (int i = 1; i <= 4; i++)
                             {
-                                var pkey = $"{mapping.Placeholder}_MEMBER{i}_ID";
-                                if (map.TryGetValue(pkey, out var idStr) && long.TryParse(idStr, out var memberId))
+                                var pkey = $"{key}_MEMBER{i}_ID";
+                                if (map.TryGetValue(pkey, out var idStr) &&
+                                    long.TryParse(idStr, out var memberId))
                                 {
-                                    var staff = await _db.GetStaffByIdAsync(memberId);
-                                    if (staff != null)
-                                        members.Add(staff);
+                                    Debug.WriteLine("memberId " + memberId);
+                                    var s = await _db.GetStaffByIdAsync(memberId);
+                                    if (s != null) members.Add(s);
                                 }
                             }
 
+                            // Находим секретаря (если есть)
                             Staff? secretary = null;
-                            if (map.TryGetValue(mapping.Placeholder + "_SECRETARY_ID", out var secIdStr)
-                                && long.TryParse(secIdStr, out var secId))
+                            if (map.TryGetValue(key + "_SECRETARY_ID", out var secIdStr) &&
+                                long.TryParse(secIdStr, out var secId))
                             {
+                                Debug.WriteLine("secId " + secId);
                                 secretary = await _db.GetStaffByIdAsync(secId);
                             }
 
-                            var mainTable = BuildCommissionTable(doc, members);
-                            var placeholderParagraph = doc.Paragraphs
-                                .FirstOrDefault(p => p.Text.Contains($"[{mapping.Placeholder}]"));
-
-                            if (placeholderParagraph != null)
+                            // Строим одно объединённое «Commission»-та­блицу,
+                            // которая умеет принимать либо список членов, либо одного секретаря в качестве member-list
+                            // (то есть если secretary != null, передадим новый список с одним элементом)
+                            var mainRows = members;
+                            if (members.Count == 0 && secretary != null)
                             {
-                                var afterMain = placeholderParagraph.InsertParagraphAfterSelf("");
-                                afterMain.InsertTableAfterSelf(mainTable);
-                                placeholderParagraph.ReplaceText($"[{mapping.Placeholder}]", "");
-
-                                if (secretary != null)
-                                {
-                                    var secTable = BuildCommissionTable(doc, new List<Staff>(), secretary);
-                                    var afterSec = afterMain.InsertParagraphAfterSelf("");
-                                    afterSec.InsertTableAfterSelf(secTable);
-                                }
+                                // если нет ни одного члена, но есть секретарь — покажем его в том же формате
+                                mainRows = new List<Staff> { secretary };
                             }
+
+                            var commissionTable = BuildCommissionTable(doc, mainRows, secretary);
+
+                            // Если у нас и члены, и секретарь одновременно, 
+                            // то нужно “прилепить” таблицу секретаря под таблицу членов. 
+                            // Для этого создадим дополнительный Table-блок той же ширины
+                            // и скопируем из BuildCommissionTable формат «секретаря» специально.
+                            // Однако проще, если BuildCommissionTable умеет принимать List<Staff> из 5 человек,
+                            // где первые 4 — члены, а 5-й — секретарь.
+                            // Тогда достаточно:
+                            //
+                            //if (members.Count > 0 && secretary != null)
+                            //{
+                            //    Debug.WriteLine("[DEBUG] Генерация тСекр1.5");
+                            //    var combined = new List<Staff>(members.Take(4)) { secretary };
+                            //    commissionTable = BuildCommissionTable(doc, combined);
+                            //}
+
+                            tables[key] = commissionTable;
                             Debug.WriteLine("[DEBUG] Генерация тСекр2");
                         }
-
-
-
-
-
                         else
                         {
                             replacements[key] = value;
@@ -273,149 +280,304 @@ namespace EasySECv2.Services
 
             Debug.WriteLine("[Генерация] Завершено.");
         }
-        // ──────────────────────────────────────────────
-        // 1. Таблица председателя ГЭК
-        // ──────────────────────────────────────────────
+
         private Table BuildChairmanTable(DocX doc, Staff chairman)
         {
+            Debug.WriteLine("[Chairman] Start BuildChairmanTable");
             var t = doc.AddTable(4, 7);
+            Debug.WriteLine($"[Chairman] Created table: Rows={t.RowCount}, Cols={t.ColumnCount}");
             t.Alignment = Alignment.center;
             t.Design = TableDesign.TableGrid;
+            t.SetWidths(new float[] { 60f, 120f, 150f, 200f, 150f, 150f, 100f });
+            Debug.WriteLine("[Chairman] Set column widths");
 
-            // ─ строка-0
+            // Заголовок
             t.Rows[0].MergeCells(0, 6);
             t.Rows[0].Cells[0].Paragraphs[0]
                 .Append("Председатель ГЭК")
-                .Font("Times New Roman").FontSize(14).Bold()
+                .Font("Times New Roman").FontSize(12).Bold()
                 .Alignment = Alignment.center;
 
-            // ─ строка-1 — верхние заголовки (7 ячеек пока неизменённые)
+            // Заполняем вторую строку (r1) без горизонтального слияния
             var r1 = t.Rows[1];
             r1.Cells[0].Paragraphs[0].Append("Образовательная программа")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
-            r1.Cells[1].Paragraphs[0].Append("") /* будет объединено */ .Font("Times New Roman").FontSize(14).Bold();
-            r1.Cells[2].Paragraphs[0].Append("Фамилия,\nимя, отчество")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+            r1.Cells[1].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12).Bold();
+            r1.Cells[2].Paragraphs[0].Append("Фамилия, имя, отчество")
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
             r1.Cells[3].Paragraphs[0].Append("Основное место работы\n(субъект РФ, город), занимаемая должность")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
             r1.Cells[4].Paragraphs[0].Append("Учёная степень\n(серия, №, дата)")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
             r1.Cells[5].Paragraphs[0].Append("Учёное звание\n(серия, №, дата)")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
             r1.Cells[6].Paragraphs[0].Append("Почётное звание")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
 
-            // ─ строка-2 — подзаголовки
+            // Заполняем третью строку (r2)
             var r2 = t.Rows[2];
             r2.Cells[0].Paragraphs[0].Append("Шифр")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
             r2.Cells[1].Paragraphs[0].Append("Наименование, профиль")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
-
-            // 1️⃣ СНАЧАЛА вертикально объединяем колонки 2-6 (строки 1-2)
-            for (int col = 2; col <= 6; col++)
-                t.MergeCellsInColumn(col, 1, 2);
-
-            // 2️⃣ ПОТОМ объединяем по строке 0-1 ячейки «Образоват. программа»
-            r1.MergeCells(0, 1);
-
-            // ─ строка-3 — данные
-            var vals = new[]
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+            // Остальные ячейки r2 пока пустые
+            for (int i = 2; i < 7; i++)
             {
-        "", "",                         // шифр/профиль
-        chairman.FullName    ?? "",
-        chairman.Position     ?? "",
-        chairman.Degree       ?? "",
-        chairman.DegreeRank   ?? "",
+                r2.Cells[i].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+            }
+
+            Debug.WriteLine($"[Chairman] Before vertical merge: Rows={t.RowCount}, Cols={t.ColumnCount}");
+            for (int col = 2; col <= 6; col++)
+            {
+                Debug.WriteLine($"[Chairman] Merging column {col} rows 1 and 2");
+                t.MergeCellsInColumn(col, 1, 2);
+            }
+
+            // Теперь можно объединить r1.Cells[0] и r1.Cells[1]
+            r1.MergeCells(0, 1);
+            Debug.WriteLine("[Chairman] Merged r1 cells 0-1");
+
+            Debug.WriteLine("[Chairman] Filling row 3 data");
+            var data = new[]
+            {
+        "", "",
+        chairman.FullName ?? "",
+        chairman.Position ?? "",
+        chairman.Degree ?? "",
+        chairman.DegreeRank ?? "",
         chairman.DegreeAwards ?? ""
     };
             for (int c = 0; c < 7; c++)
-                t.Rows[3].Cells[c].Paragraphs[0]
-                    .Append(vals[c])
-                    .Font("Times New Roman").FontSize(14)
-                    .Alignment = Alignment.center;
-
-            return t;
-        }
-
-
-        // ──────────────────────────────────────────────
-        // 2. Таблица членов комиссии / секретаря
-        // ──────────────────────────────────────────────
-        private Table BuildCommissionTable(DocX doc, List<Staff> members, Staff? secretary = null)
-        {
-            var t = doc.AddTable(7, 6);
-            t.Alignment = Alignment.center;
-            t.Design = TableDesign.TableGrid;
-
-            // ─ строка-0
-            t.Rows[0].MergeCells(0, 5);
-            t.Rows[0].Cells[0].Paragraphs[0]
-                .Append(secretary == null
-                    ? "Члены ГЭК по защите выпускной квалификационной работы"
-                    : "Секретарь ГЭК по защите выпускной квалификационной работы")
-                .Font("Times New Roman").FontSize(14).Bold()
-                .Alignment = Alignment.center;
-
-            // ─ строка-1 — верхние заголовки
-            var r1 = t.Rows[1];
-            r1.Cells[0].Paragraphs[0].Append("№ п/п")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
-            r1.Cells[1].Paragraphs[0].Append("Образовательная программа")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
-            r1.Cells[2].Paragraphs[0].Append("")  /* объединят */
-                .Font("Times New Roman").FontSize(14).Bold();
-            r1.Cells[3].Paragraphs[0].Append("Фамилия,\nимя, отчество")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
-            r1.Cells[4].Paragraphs[0].Append("Основное место работы,\nзанимаемая должность")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
-            r1.Cells[5].Paragraphs[0].Append("Учёная степень,\nучёное звание")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
-
-            // ─ строка-2 — подзаголовки
-            var r2 = t.Rows[2];
-            r2.Cells[1].Paragraphs[0].Append("Шифр")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
-            r2.Cells[2].Paragraphs[0].Append("Наименование, профиль")
-                .Font("Times New Roman").FontSize(14).Bold().Alignment = Alignment.center;
-
-            // 1️⃣ СНАЧАЛА вертикальные merge-ы
-            foreach (int col in new[] { 0, 3, 4, 5 })
-                t.MergeCellsInColumn(col, 1, 2);
-
-            // 2️⃣ ПОТОМ горизонтальное объединение 1-2 столбцов
-            r1.MergeCells(1, 2);
-
-            // ─ строки-3…6
-            var people = secretary == null
-                ? members.Take(4).ToList()
-                : new List<Staff> { secretary };
-
-            for (int i = 0; i < 4; i++)
             {
-                var row = t.Rows[i + 3];
-                var s = i < people.Count ? people[i] : null;
-
-                row.Cells[0].Paragraphs[0].Append(s != null ? (i + 1).ToString() : "")
-                    .Font("Times New Roman").FontSize(14);
-                row.Cells[1].Paragraphs[0].Append("")                          // Шифр
-                    .Font("Times New Roman").FontSize(14);
-                row.Cells[2].Paragraphs[0].Append("")                          // Наим./профиль
-                    .Font("Times New Roman").FontSize(14);
-                row.Cells[3].Paragraphs[0].Append(s?.FullName ?? "")
-                    .Font("Times New Roman").FontSize(14);
-                row.Cells[4].Paragraphs[0].Append(s?.Position ?? "")
-                    .Font("Times New Roman").FontSize(14);
-                row.Cells[5].Paragraphs[0]
-                    .Append(string.Join(", ",
-                        new[] { s?.Degree, s?.DegreeRank }
-                            .Where(v => !string.IsNullOrWhiteSpace(v))))
-                    .Font("Times New Roman").FontSize(14);
+                Debug.WriteLine($"[Chairman] Row 3, Cell {c} -> '{data[c]}'");
+                t.Rows[3].Cells[c].Paragraphs[0]
+                    .Append(data[c])
+                    .Font("Times New Roman").FontSize(12)
+                    .Alignment = Alignment.center;
             }
 
+            Debug.WriteLine("[Chairman] Finished BuildChairmanTable");
             return t;
         }
 
+
+        private Table BuildCommissionTable(DocX doc, List<Staff> members, Staff? secretary = null)
+        {
+            Debug.WriteLine("[Commission] Start BuildCommissionTable");
+            bool hasMembers = members != null && members.Count > 0;
+            bool hasSecretary = secretary != null;
+            Debug.WriteLine($"[Commission] hasMembers={hasMembers}, hasSecretary={hasSecretary}");
+
+            int rowsForMembers = 1 + 1 + 1 + 4;
+            int rowsForSecretary = hasSecretary ? 3 : 0;
+            int totalRows = rowsForMembers + rowsForSecretary;
+            Debug.WriteLine($"[Commission] totalRows={totalRows}");
+
+            var t = doc.AddTable(totalRows, 6);
+            Debug.WriteLine($"[Commission] Created table: Rows={t.RowCount}, Cols={t.ColumnCount}");
+            t.Alignment = Alignment.center;
+            t.Design = TableDesign.TableGrid;
+            t.SetWidths(new float[] { 50f, 70f, 140f, 180f, 160f, 100f });
+            Debug.WriteLine("[Commission] Set column widths");
+            t.MergeCellsInColumn(3, 1, 2);
+            t.MergeCellsInColumn(4, 1, 2);
+            t.MergeCellsInColumn(5, 1, 2);
+            int currentRow = 0;
+
+            // Заголовок
+            Debug.WriteLine("[Commission] Merging row 0 cells 0-5 for title");
+            t.Rows[currentRow].MergeCells(0, 5);
+            t.Rows[currentRow].Cells[0].Paragraphs[0]
+                .Append("Члены ГЭК по защите выпускной квалификационной работы")
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+            currentRow++;
+
+            // Шапка
+            Debug.WriteLine($"[Commission] Filling header row at index {currentRow}");
+            var rHeader = t.Rows[currentRow];
+            rHeader.Cells[0].Paragraphs[0].Append("№ п/п")
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+            rHeader.Cells[1].Paragraphs[0].Append("Образовательная программа")
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+            rHeader.Cells[2].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12).Bold();
+            rHeader.Cells[3].Paragraphs[0].Append("Фамилия, имя, отчество")
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+            rHeader.Cells[4].Paragraphs[0].Append("Основное место работы, занимаемая должность")
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+            rHeader.Cells[5].Paragraphs[0].Append("Учёная степень, учёное звание")
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+
+            Debug.WriteLine($"[Commission] Before merging header cells: RowCount={t.RowCount}, ColCount={t.ColumnCount}");
+            // Горизонтальное слияние в шапке (строка currentRow)
+            rHeader.MergeCells(1, 2);
+            Debug.WriteLine("[Commission] Merged header cells 1-2");
+            currentRow++;
+
+            // Подшапка
+            Debug.WriteLine($"[Commission] Filling subheader row at index {currentRow}");
+            var rSub = t.Rows[currentRow];
+            rSub.Cells[0].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+            rSub.Cells[1].Paragraphs[0].Append("Шифр")
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+            rSub.Cells[2].Paragraphs[0].Append("Наименование, профиль")
+                .Font("Times New Roman").FontSize(12).Bold()
+                .Alignment = Alignment.center;
+            rSub.Cells[3].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+            rSub.Cells[4].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+            rSub.Cells[5].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+
+            Debug.WriteLine($"[Commission] Before merging vertical: RowCount={t.RowCount}, ColCount={t.ColumnCount}");
+            // Безопасная проверка на существование строк и столбцов перед vertical merge
+            if (t.RowCount > currentRow && t.RowCount > currentRow - 1)
+            {
+                // Объединяем вертикально столбец 0 (№ п/п)
+                if (t.Rows[currentRow - 1].Cells.Count > 0 && t.Rows[currentRow].Cells.Count > 0)
+                {
+                    Debug.WriteLine($"[Commission] Merging vertical column 0 rows {currentRow - 1} and {currentRow}");
+                    t.MergeCellsInColumn(0, currentRow - 1, currentRow);
+                }
+                
+                //// Объединяем вертикально столбцы 3, 4, 5
+                //for (int col = 3; col <= 5; col++)
+                //{
+                //    if (t.Rows[currentRow - 1].Cells.Count > col && t.Rows[currentRow].Cells.Count > col)
+                //    {
+                //        Debug.WriteLine($"[Commission] Merging vertical column {col} rows {currentRow - 1} and {currentRow}");
+                //        t.MergeCellsInColumn(col, currentRow - 1, currentRow);
+                //    }
+                //}
+                Debug.WriteLine("[Commission] Merged vertical cells for cols 0, 3, 4, 5");
+            }
+            currentRow++;
+
+            // Строки с членами
+            Debug.WriteLine($"[Commission] Filling member rows starting at index {currentRow}");
+            for (int i = 0; i < 4; i++)
+            {
+                int rowIndex = currentRow + i;
+                if (rowIndex >= t.RowCount) break;
+                Debug.WriteLine($"[Commission] Filling row {rowIndex}");
+                var rowM = t.Rows[rowIndex];
+
+                rowM.Cells[0].Paragraphs[0]
+                    .Append((i + 1).ToString())
+                    .Font("Times New Roman").FontSize(12)
+                    .Alignment = Alignment.center;
+                rowM.Cells[1].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                rowM.Cells[2].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+
+                if (i < members.Count)
+                {
+                    var s = members[i];
+                    rowM.Cells[3].Paragraphs[0]
+                        .Append(s.FullName ?? "")
+                        .Font("Times New Roman").FontSize(12)
+                        .Alignment = Alignment.center;
+                    rowM.Cells[4].Paragraphs[0]
+                        .Append(s.Position ?? "")
+                        .Font("Times New Roman").FontSize(12)
+                        .Alignment = Alignment.center;
+                    var degParts = new[] { s.Degree, s.DegreeRank }
+                        .Where(v => !string.IsNullOrWhiteSpace(v));
+                    rowM.Cells[5].Paragraphs[0]
+                        .Append(string.Join(", ", degParts))
+                        .Font("Times New Roman").FontSize(12)
+                        .Alignment = Alignment.center;
+                }
+                else
+                {
+                    rowM.Cells[3].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                    rowM.Cells[4].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                    rowM.Cells[5].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                }
+
+                rowM.MinHeight = 20;
+            }
+            currentRow += 4;
+
+            // Блок секретаря (если есть)
+            if (hasSecretary)
+            {
+                Debug.WriteLine($"[Commission] Adding secretary block at row {currentRow}");
+                if (currentRow < t.RowCount)
+                {
+                    t.Rows[currentRow].MergeCells(0, 5);
+                    t.Rows[currentRow].Cells[0].Paragraphs[0]
+                        .Append("Секретарь ГЭК по защите выпускной квалификационной работы")
+                        .Font("Times New Roman").FontSize(12).Bold()
+                        .Alignment = Alignment.center;
+                    currentRow++;
+                }
+
+                if (currentRow < t.RowCount)
+                {
+                    Debug.WriteLine($"[Commission] Filling secretary header at row {currentRow}");
+                    var rSecH = t.Rows[currentRow];
+
+                    rSecH.Cells[0].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                    rSecH.Cells[1].Paragraphs[0].Append("Шифр")
+                        .Font("Times New Roman").FontSize(12).Bold()
+                        .Alignment = Alignment.center;
+                    rSecH.Cells[2].Paragraphs[0].Append("Наименование")
+                        .Font("Times New Roman").FontSize(12).Bold()
+                        .Alignment = Alignment.center;
+                    rSecH.Cells[3].Paragraphs[0].Append("Фамилия, имя, отчество")
+                        .Font("Times New Roman").FontSize(12).Bold()
+                        .Alignment = Alignment.center;
+                    rSecH.Cells[4].Paragraphs[0].Append("Основное место работы, занимаемая должность")
+                        .Font("Times New Roman").FontSize(12).Bold()
+                        .Alignment = Alignment.center;
+                    rSecH.Cells[5].Paragraphs[0].Append("Учёная степень, учёное звание")
+                        .Font("Times New Roman").FontSize(12).Bold()
+                        .Alignment = Alignment.center;
+
+                    
+                    currentRow++;
+                }
+
+                if (currentRow < t.RowCount)
+                {
+                    Debug.WriteLine($"[Commission] Filling secretary data at row {currentRow}");
+                    var rowS = t.Rows[currentRow];
+                    rowS.Cells[0].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                    rowS.Cells[1].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                    rowS.Cells[2].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                    rowS.Cells[3].Paragraphs[0]
+                        .Append(secretary.FullName ?? "")
+                        .Font("Times New Roman").FontSize(12)
+                        .Alignment = Alignment.center;
+                    rowS.Cells[4].Paragraphs[0]
+                        .Append(secretary.Position ?? "")
+                        .Font("Times New Roman").FontSize(12)
+                        .Alignment = Alignment.center;
+                    var sDeg = new[] { secretary.Degree, secretary.DegreeRank }
+                        .Where(v => !string.IsNullOrWhiteSpace(v));
+                    rowS.Cells[5].Paragraphs[0]
+                        .Append(string.Join(", ", sDeg))
+                        .Font("Times New Roman").FontSize(12)
+                        .Alignment = Alignment.center;
+                    rowS.MinHeight = 20;
+                }
+            }
+
+            Debug.WriteLine("[Commission] Finished BuildCommissionTable");
+            return t;
+        }
 
 
         private void ReplaceAllPlaceholdersWithRegex(DocX document, Dictionary<string, string> map)

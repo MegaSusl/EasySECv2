@@ -32,7 +32,8 @@ namespace EasySECv2.Views
           "vkr-inventory",
           "state-exam-schedule",
           "state-exam-schedule-umu",
-          "vkr-topic-assignment"
+          "vkr-topic-assignment",
+          "chairman-report"
         };
 
         private string selectedPageKey = "sec_composition";

@@ -6,7 +6,7 @@
              Title="График проведения ГАИ">
 
     <ContentPage.BindingContext>
-        <viewmodels:SecSecretaryReplacementViewModel />
+        <viewmodels:StateExamScheduleViewModel />
     </ContentPage.BindingContext>
 
     <ScrollView>

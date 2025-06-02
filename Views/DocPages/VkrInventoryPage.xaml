@@ -6,7 +6,7 @@
              Title="Опись ВКР">
 
     <ContentPage.BindingContext>
-        <viewmodels:SecSecretaryReplacementViewModel />
+        <viewmodels:VkrInventoryViewModel />
     </ContentPage.BindingContext>
 
     <ScrollView>

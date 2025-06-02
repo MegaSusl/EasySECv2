@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:EasySECv2.Views"
+    xmlns:docViews="clr-namespace:EasySECv2.Views.DocPages"
     xmlns:local="clr-namespace:EasySECv2"
     FlyoutBackgroundColor="{StaticResource PrimaryLight}" 
     FlyoutBackdrop="#66000000" 
@@ -48,7 +49,8 @@
 
     <FlyoutItem Title="Заседание" Icon="docs.png">
         <ShellContent Title="Протокол" ContentTemplate="{DataTemplate views:ProtocolPage}" Shell.FlyoutItemIsVisible="False" />
-        <ShellContent Title="Отчет" ContentTemplate="{DataTemplate views:VkrInventoryPage}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Отчет" ContentTemplate="{DataTemplate docViews:ChairmanReport}" Shell.FlyoutItemIsVisible="False" />
+        <ShellContent Title="Опись" ContentTemplate="{DataTemplate views:VkrInventoryPage}" Shell.FlyoutItemIsVisible="False" />
         <ShellContent Title="Справки" ContentTemplate="{DataTemplate views:BatchCertificatePage}" Shell.FlyoutItemIsVisible="False" />
     </FlyoutItem>
 

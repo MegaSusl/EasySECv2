@@ -49,7 +49,7 @@
                       Grid.Column="1"
                       Title="Группа"
                       ItemsSource="{Binding Groups}"
-                      ItemDisplayBinding="{Binding name}"
+                      ItemDisplayBinding="{Binding Name}"
                       SelectedItem="{Binding SelectedGroup}"
                       BackgroundColor="{StaticResource AccentLight}"
                       TextColor="{StaticResource TextPrimary}" />
@@ -58,7 +58,7 @@
                       Grid.Column="2"
                       Title="Направление"
                       ItemsSource="{Binding Orientations}"
-                      ItemDisplayBinding="{Binding name}"
+                      ItemDisplayBinding="{Binding Name}"
                       SelectedItem="{Binding SelectedOrientation}"
                       BackgroundColor="{StaticResource AccentLight}"
                       TextColor="{StaticResource TextPrimary}" />
@@ -86,7 +86,7 @@
         ColumnDefinitions="60,2*,2*,1*,1*"
         RowSpacing="8">
                     <Label
-          Text="{Binding id}"
+          Text="{Binding Id}"
           TextColor="{StaticResource TextSecondary}"
           VerticalOptions="Center" />
                     <Label

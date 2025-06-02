@@ -149,7 +149,7 @@ namespace EasySECv2.ViewModels
             if (!string.IsNullOrWhiteSpace(SearchQuery))
                 list = list.Where(s =>
                     s.FullName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)
-                    || s.id.ToString().Contains(SearchQuery))
+                    || s.Id.ToString().Contains(SearchQuery))
                     .ToList();
 
             if (SelectedGroup != null)
@@ -162,7 +162,7 @@ namespace EasySECv2.ViewModels
             list = SelectedSortOption switch
             {
                 "По ФИО Я→A" => list.OrderByDescending(s => s.FullName).ToList(),
-                "По ID" => list.OrderBy(s => s.id).ToList(),
+                "По ID" => list.OrderBy(s => s.Id).ToList(),
                 _ => list.OrderBy(s => s.FullName).ToList()
             };
 
@@ -196,7 +196,7 @@ namespace EasySECv2.ViewModels
                 File.AppendAllText("fatal.log", ex.ToString());
             }
         }        
-async void OnEdit(Student s) => await Shell.Current.GoToAsync($"{nameof(EditStudentPage)}?id={s.id}");
+async void OnEdit(Student s) => await Shell.Current.GoToAsync($"{nameof(EditStudentPage)}?id={s.Id}");
 
         private async void OnDelete(Student s)
         {

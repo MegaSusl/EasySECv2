@@ -22,9 +22,9 @@
 
             <Label Text="Выбор группы студентов:" FontAttributes="Bold" TextColor="{StaticResource TextPrimary}"/>
             <Picker ItemsSource="{Binding Groups}"
-                    ItemDisplayBinding="{Binding name}"
+                    ItemDisplayBinding="{Binding Name}"
                     SelectedItem="{Binding SelectedGroup}"/>
-
+                                                                 
             <Border Stroke="{StaticResource PrimaryLight}" 
                     StrokeThickness="1"
                     BackgroundColor="{StaticResource BackgroundAlt}" WidthRequest="700" HorizontalOptions="Start"

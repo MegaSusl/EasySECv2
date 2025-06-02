@@ -6,7 +6,7 @@
              Title="Закрепление тем ВКР и назначение научных руководителей">
 
     <ContentPage.BindingContext>
-        <viewmodels:SecSecretaryReplacementViewModel />
+        <viewmodels:VkrTopicAssignmentViewModel />
     </ContentPage.BindingContext>
 
     <ScrollView>

@@ -127,7 +127,7 @@ namespace EasySECv2
                 new CrudService<Student>(
                     sp.GetRequiredService<DatabaseService>()._database,
                     db => db.Table<Student>(),
-                    (db, it) => it.id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
+                    (db, it) => it.Id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
                     (db, it) => db.DeleteAsync(it)
                 ));
             builder.Services.AddSingleton<ICrudService<Department>>(sp =>

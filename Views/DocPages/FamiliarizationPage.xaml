@@ -45,7 +45,7 @@
                                     Grid.Column="0" WidthRequest="200"
                                     VerticalOptions="Center">
 
-                                <Label Text="{Binding Group.name}" 
+                                <Label Text="{Binding Group.Name}" 
                                        VerticalOptions="Center"
                                        TextColor="{StaticResource TextPrimary}" WidthRequest="180"/>
                             </Border>

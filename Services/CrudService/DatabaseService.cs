@@ -118,7 +118,7 @@ namespace EasySECv2.Services
 
         public Task<int> SaveStudentAsync(Student user)
         {
-            return user.id != 0
+            return user.Id != 0
                 ? _database.UpdateAsync(user)
                 : _database.InsertAsync(user);
         }
@@ -186,7 +186,7 @@ namespace EasySECv2.Services
         public ICrudService<Student> Students => new CrudService<Student>(
             _database,
             conn => conn.Table<Student>(),
-            (db, item) => item.id == 0
+            (db, item) => item.Id == 0
                 ? db.InsertAsync(item)
                 : db.UpdateAsync(item),
             (db, item) => db.DeleteAsync(item)
