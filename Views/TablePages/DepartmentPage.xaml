@@ -45,7 +45,7 @@
           BackgroundColor="{StaticResource Surface}">
                 <Grid Padding="10" ColumnDefinitions="*,Auto">
                     <Label
-              Text="{Binding name}"
+              Text="{Binding Name}"
               VerticalOptions="Center"
               TextColor="{StaticResource TextPrimary}" />
                     <HorizontalStackLayout

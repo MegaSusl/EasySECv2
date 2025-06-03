@@ -34,11 +34,11 @@
             <Frame CornerRadius="6" HasShadow="False" Padding="0" Margin="0,4"
              BackgroundColor="{StaticResource Surface}">
                 <Grid Padding="10" ColumnDefinitions="3*,2*,Auto">
-                    <Label Text="{Binding name}"
+                    <Label Text="{Binding Name}"
                  VerticalOptions="Center"
                  TextColor="{StaticResource TextPrimary}" />
                     <Label Grid.Column="1"
-                 Text="{Binding shortName}"
+                 Text="{Binding ShortName}"
                  VerticalOptions="Center"
                  TextColor="{StaticResource TextSecondary}" />
                     <HorizontalStackLayout Grid.Column="2" Spacing="6" VerticalOptions="Center">
