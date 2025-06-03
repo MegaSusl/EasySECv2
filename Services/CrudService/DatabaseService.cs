@@ -313,6 +313,72 @@ namespace EasySECv2.Services
                 .Where(s => s.Id == id)
                 .FirstOrDefaultAsync();
         }
+        /* -----------------------------------------------------------------
+         *   🔍  Поиск групп по Id и по названию
+         * ----------------------------------------------------------------*/
+
+        /// <summary>
+        /// Группа по первичному ключу
+        /// </summary>
+        public Task<Group?> GetGroupByIdAsync(long id) =>
+            _database.Table<Group>()
+                     .Where(g => g.Id == id)
+                     .FirstOrDefaultAsync();
+
+        /// <summary>
+        /// Группа по «человеческому» имени (exact match, регистр учитывается
+        /// как в БД; если нужно без учёта регистра – допиши .ToLower()).
+        /// </summary>
+        public Task<Group?> GetGroupByNameAsync(string name) =>
+            _database.Table<Group>()
+                     .Where(g => g.Name == name)
+                     .FirstOrDefaultAsync();
+
+        /* -----------------------------------------------------------------
+         *  DTO для строки таблицы тем ВКР
+         * ----------------------------------------------------------------*/
+        public sealed class VkrTopicInfo
+        {
+            public long StudentId { get; init; }
+            public string StudentFio { get; init; } = "";
+            public string OrientationCode { get; init; } = "";
+            public string OrientationName { get; init; } = "";
+            public string Topic { get; init; } = "";
+            public string SupervisorFio { get; init; } = "";
+            public string SupervisorPosition { get; init; } = "";
+        }
+
+        /* -----------------------------------------------------------------
+         *  Темы ВКР всех студентов выбранной группы
+         * ----------------------------------------------------------------*/
+        public Task<List<VkrTopicInfo>> GetVkrTopicsByGroupAsync(long groupId)
+        {
+            const string sql = @"
+                SELECT
+                    s.Id                                                AS StudentId,
+                    (s.Surname || ' ' || s.Name || ' ' ||
+                     IFNULL(s.MiddleName,''))                           AS StudentFio,
+
+                    IFNULL(o.Code,'')                                   AS OrientationCode,
+                    IFNULL(o.Name,'')                                   AS OrientationName,
+
+                    IFNULL(f.Topic,'')                                  AS Topic,
+
+                    (IFNULL(st.Surname,'') || ' ' || IFNULL(st.Name,'') ||
+                     CASE WHEN st.MiddleName IS NOT NULL
+                          THEN ' ' || st.MiddleName ELSE '' END)        AS SupervisorFio,
+
+                    IFNULL(st.Position,'')                              AS SupervisorPosition
+                FROM Student                s
+                LEFT JOIN Orientation       o  ON o.Id  = s.Orientation
+                LEFT JOIN FinalQualifyingWork f  ON f.StudentId  = s.Id
+                LEFT JOIN Staff             st ON st.Id = f.SupervisorId
+                WHERE s.GroupId = ?;
+            ";
+
+            return _database.QueryAsync<VkrTopicInfo>(sql, groupId);
+        }
+
 
     }
 }

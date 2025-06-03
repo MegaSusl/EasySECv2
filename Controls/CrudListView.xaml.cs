@@ -145,6 +145,21 @@ namespace EasySECv2.Controls
             set => SetValue(SelectedItemProperty, value);
         }
 
+        // 11) FqwCommand – команда для кнопки "📄"
+        public static readonly BindableProperty FqwCommandProperty =
+            BindableProperty.Create(
+                nameof(FqwCommand),
+                typeof(ICommand),
+                typeof(CrudListView),
+                null);
+
+        public ICommand FqwCommand
+        {
+            get => (ICommand)GetValue(FqwCommandProperty);
+            set => SetValue(FqwCommandProperty, value);
+        }
+
+
         // Rebuild filter & header when VM changes
         protected override void OnBindingContextChanged()
         {

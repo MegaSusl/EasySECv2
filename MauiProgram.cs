@@ -18,9 +18,6 @@ using Microsoft.Maui.Handlers;
 using SQLitePCL;
 using System.Diagnostics;
 
-
-
-
 #if WINDOWS
 using Microsoft.UI.Xaml.Controls;
 #endif
@@ -172,6 +169,13 @@ namespace EasySECv2
                     (db, it) => it.Id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
                     (db, it) => db.DeleteAsync(it)
                 ));
+            builder.Services.AddSingleton<ICrudService<FinalQualifyingWork>>(sp =>
+                new CrudService<FinalQualifyingWork>(
+                    sp.GetRequiredService<DatabaseService>()._database,
+                    db => db.Table<FinalQualifyingWork>(),
+                    (db, it) => it.Id == 0 ? db.InsertAsync(it) : db.UpdateAsync(it),
+                    (db, it) => db.DeleteAsync(it)
+                ));
 
             //
             // 4) «Страницы-списки» и их VM
@@ -196,7 +200,8 @@ namespace EasySECv2
             //
             // 5) Универсальный редактор: открытый GenericEditViewModel<T>
             //
-            builder.Services.AddTransient(typeof(GenericEditViewModel<>));
+            //builder.Services.AddTransient(typeof(GenericEditViewModel<>));
+            builder.Services.AddTransient(typeof(GenericEditViewModel<>), typeof(GenericEditViewModel<>));
 
             //
             // 6) «Обёртки» для GenericEditPage — по одной на каждую модель.
@@ -209,6 +214,9 @@ namespace EasySECv2
             builder.Services.AddTransient<EditFormOfEducationPage>();
             builder.Services.AddTransient<EditStaffPage>();
 
+            builder.Services.AddTransient<FqwEditPage>();
+            builder.Services.AddTransient<FqwEditViewModel>();
+            
             //
             // 7) Роуты для навигации
             //
@@ -218,7 +226,26 @@ namespace EasySECv2
             Routing.RegisterRoute(nameof(EditInstitutePage), typeof(EditInstitutePage));
             Routing.RegisterRoute(nameof(EditFormOfEducationPage), typeof(EditFormOfEducationPage));
             Routing.RegisterRoute(nameof(EditStaffPage), typeof(EditStaffPage));
+            Routing.RegisterRoute(nameof(FqwEditPage), typeof(FqwEditPage));
             //Routing.RegisterRoute(nameof(GenericEditPage), typeof(GenericEditPage));
+
+            //builder.Services.AddTransient(
+            //typeof(GenericEditViewModel<>),
+            //serviceProvider =>
+            //{
+            //    // поставим фабрику, чтобы передавать dbService
+            //    return (Type genericType) =>
+            //    {
+            //        var db = serviceProvider.GetRequiredService<DatabaseService>();
+            //        var crudFactory = serviceProvider.GetRequiredService(typeof(ICrudService<>).MakeGenericType(genericType));
+
+            //        // создаём экземпляр через Activator
+            //        return Activator.CreateInstance(
+            //            typeof(GenericEditViewModel<>).MakeGenericType(genericType),
+            //            crudFactory, db);
+            //    };
+            //});
+
 
             builder.Services.AddTransient<SecCompositionViewModel>();
             builder.Services.AddTransient<SecCompositionPage>();

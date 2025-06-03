@@ -1,6 +1,8 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -15,7 +17,7 @@ namespace EasySECv2.Views
     public partial class GenericEditPage : ContentPage
     {
         // ---------------------------------------------------------------------
-        // Supported control types � keep as strings to preserve backward-compat
+        // Supported control types – keep as strings to preserve backward-compat
         // ---------------------------------------------------------------------
         const string CT_PICKER = "Picker";
         const string CT_ENTRY = "Entry";      // default
@@ -31,9 +33,20 @@ namespace EasySECv2.Views
             _vm = vm;
             BindingContext = vm;
 
-            BuildFields();
-            Title = vm.IsNew ? "�������� ����� ������" : "��������������";
+            //BuildFields();
+            Title = vm.IsNew ? "Создание новой записи" : "Редактирование";
         }
+        bool _built;
+
+        protected override void OnAppearing()
+        {
+            base.OnAppearing();
+            if (_built) return;
+
+            BuildFields();      // строим независимо от того, пусты ли коллекции
+            _built = true;
+        }
+
 
         public string ItemId
         {
@@ -49,12 +62,12 @@ namespace EasySECv2.Views
             await _vm.LoadExistingAsync(id);
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                Title = _vm.IsNew ? "�������� ����� ������" : "��������������";
+                Title = _vm.IsNew ? "Создание новой записи" : "Редактирование";
             });
         }
 
         // ---------------------------------------------------------------------
-        // ResolveControlType � chooses a control if ����� �� ������ ControlType
+        // ResolveControlType – chooses a control if автор не указал ControlType
         // ---------------------------------------------------------------------
         static string ResolveControlType(PropertyInfo pi, EditableAttribute attr)
         {
@@ -68,11 +81,11 @@ namespace EasySECv2.Views
                 type == typeof(DateTime)) return CT_DATEPICKER;
             if (type.IsEnum) return CT_PICKER;
 
-            return CT_ENTRY; // ��-��������� Entry
+            return CT_ENTRY; // по-умолчанию Entry
         }
 
         // ---------------------------------------------------------------------
-        // BuildFields � ������������ ��������� �����
+        // BuildFields – динамическая генерация формы
         // ---------------------------------------------------------------------
         void BuildFields()
         {
@@ -87,35 +100,134 @@ namespace EasySECv2.Views
                 if (attr == null)
                     continue;
 
-                // ---------- ���������
+                // ---------- Заголовок
                 var lbl = new Label { Text = attr.Label };
                 lbl.Style = (Style)Application.Current.Resources["FormLabelStyle"];
 
-                // ---------- ������� � ����������� �� ControlType
+                // ---------- Контрол в зависимости от ControlType
                 View ctrl;
                 var ctlType = ResolveControlType(pi, attr);
 
                 switch (ctlType)
                 {
+                    //case CT_PICKER:
+                    //    {
+                    //        var picker = new Picker { Title = attr.Label };
+                    //        picker.Style = (Style)Application.Current.Resources["FormPickerStyle"];
+
+                    //        var baseName = pi.Name.EndsWith("Id", StringComparison.OrdinalIgnoreCase)
+                    //                          ? pi.Name[..^2]     // обрезаем "Id"
+                    //                          : pi.Name;
+                    //        var lookupProp = _vm.GetType().GetProperty(
+                    //        baseName + "s",
+                    //        BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                    //        Debug.WriteLine($"[FORM] PICKER: {_vm.GetType().GetProperty(pi.Name + "s")}");
+                    //        if (lookupProp != null)
+                    //        {
+                    //            var rawItems = lookupProp.GetValue(_vm) as IEnumerable;
+                    //            if (rawItems != null)
+                    //            {
+                    //                IList itemsList = rawItems as IList ?? rawItems.Cast<object>().ToList();
+                    //                picker.ItemsSource = itemsList;
+                    //                picker.ItemDisplayBinding = new Binding("Name");
+                    //            }
+                    //        }
+
+                    //        picker.SetBinding(Picker.SelectedItemProperty,
+                    //            new Binding($"Item.{pi.Name}", BindingMode.TwoWay));
+                    //        ctrl = picker;
+                    //        break;
+                    //    }
+
                     case CT_PICKER:
                         {
                             var picker = new Picker { Title = attr.Label };
                             picker.Style = (Style)Application.Current.Resources["FormPickerStyle"];
 
-                            var lookupProp = _vm.GetType().GetProperty(pi.Name + "s");
+                            // ---- биндим ItemsSource
+                            var baseName = pi.Name.EndsWith("Id", StringComparison.OrdinalIgnoreCase)
+                                            ? pi.Name[..^2] : pi.Name;
+                            var lookupProp = _vm.GetType().GetProperty(baseName + "s",
+                                             BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
                             if (lookupProp != null)
                             {
-                                var rawItems = lookupProp.GetValue(_vm) as IEnumerable;
-                                if (rawItems != null)
-                                {
-                                    IList itemsList = rawItems as IList ?? rawItems.Cast<object>().ToList();
-                                    picker.ItemsSource = itemsList;
-                                    picker.ItemDisplayBinding = new Binding("name");
-                                }
+                                picker.SetBinding(Picker.ItemsSourceProperty, lookupProp.Name);
+                                picker.ItemDisplayBinding = new Binding("Name");
                             }
 
-                            picker.SetBinding(Picker.SelectedItemProperty,
-                                new Binding($"Item.{pi.Name}", BindingMode.TwoWay));
+                            /* ---------- TrySelectCurrent ---------- */
+                            bool TrySelectCurrent(string reason)
+                            {
+                                Debug.WriteLine($"[PICKER:{pi.Name}] TrySelectCurrent → {reason}");
+
+                                if (picker.SelectedItem != null) return true;
+                                if (picker.ItemsSource is not IEnumerable items) return false;
+                                if (!items.Cast<object>().Any()) return false;
+
+                                var idProp = items.Cast<object>().First().GetType().GetProperty("Id");
+                                var itemObj = _vm.GetType().GetProperty("Item")?.GetValue(_vm);
+                                if (idProp == null || itemObj == null) return false;
+
+                                long currentId = Convert.ToInt64(pi.GetValue(itemObj));
+                                if (currentId == 0) return false;
+
+                                var match = items.Cast<object>()
+                                                 .FirstOrDefault(x => Convert.ToInt64(idProp.GetValue(x)) == currentId);
+                                if (match == null) return false;
+
+                                picker.SelectedItem = match;                     // визуально
+                                pi.SetValue(itemObj, currentId);                 // данные модели
+
+                                Debug.WriteLine($"  ✓ выбран Id {currentId}");
+                                return true;
+                            }
+
+                            /* ---------- подписки ---------- */
+
+                            // 1) сразу после построения
+                            Device.BeginInvokeOnMainThread(() => TrySelectCurrent("init"));
+
+                            // 2) когда Binding подменит ItemsSource новым объектом
+                            picker.PropertyChanged += (_, e) =>
+                            {
+                                if (e.PropertyName == nameof(Picker.ItemsSource))
+                                {
+                                    if (TrySelectCurrent("ItemsSource заменился")) return;
+
+                                    // подписываемся на CollectionChanged нового объекта
+                                    SubscribeToCollection(picker.ItemsSource);
+                                }
+                            };
+
+                            // 3) helper: подписаться на CollectionChanged → выбрать, потом отписаться
+                            void SubscribeToCollection(object source)
+                            {
+                                if (source is INotifyCollectionChanged nc)
+                                {
+                                    NotifyCollectionChangedEventHandler h = null;
+                                    h = (_, __) =>
+                                    {
+                                        if (TrySelectCurrent("элемент добавлен"))
+                                            nc.CollectionChanged -= h;
+                                    };
+                                    nc.CollectionChanged += h;
+                                }
+                            }
+                            SubscribeToCollection(picker.ItemsSource);
+
+                            /* ---------- запись новых значений ---------- */
+                            picker.SelectedIndexChanged += (_, __) =>
+                            {
+                                if (picker.SelectedItem == null) return;
+
+                                var newId = Convert.ToInt64(
+                                    picker.SelectedItem.GetType().GetProperty("Id")!.GetValue(picker.SelectedItem));
+
+                                var itemObj = _vm.GetType().GetProperty("Item")?.GetValue(_vm);
+                                itemObj?.GetType().GetProperty(pi.Name)?.SetValue(itemObj, newId);
+                            };
+
                             ctrl = picker;
                             break;
                         }
@@ -153,7 +265,7 @@ namespace EasySECv2.Views
                         }
                 }
 
-                // ---------- Read-only / disabled ��� id
+                // ---------- Read-only / disabled для id
                 if (pi.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
                 {
                     switch (ctrl)
@@ -165,7 +277,7 @@ namespace EasySECv2.Views
                     }
                 }
 
-                // ---------- �������
+                // ---------- Обертка
                 var wrapper = new Frame
                 {
                     Style = (Style)Application.Current.Resources["FormFieldFrameStyle"],
@@ -180,21 +292,21 @@ namespace EasySECv2.Views
                 FieldsHost.Children.Add(wrapper);
             }
 
-            // ---------- ������ Save / Cancel
+            // ---------- Кнопки Save / Cancel
             var buttons = new HorizontalStackLayout
             {
                 Spacing = 12,
                 HorizontalOptions = LayoutOptions.Center
             };
-            var save = new Button { Text = "���������" };
+            var save = new Button { Text = "Сохранить" };
             save.SetBinding(Button.CommandProperty, nameof(_vm.SaveCommand));
-            var cancel = new Button { Text = "������" };
+            var cancel = new Button { Text = "Отмена" };
             cancel.SetBinding(Button.CommandProperty, nameof(_vm.CancelCommand));
             buttons.Children.Add(save);
             buttons.Children.Add(cancel);
             FieldsHost.Children.Add(buttons);
 
-            // ---------- �������� ��������
+            // ---------- Закрытие страницы
             _vm.CloseRequested += ok =>
             {
                 MainThread.BeginInvokeOnMainThread(async () =>

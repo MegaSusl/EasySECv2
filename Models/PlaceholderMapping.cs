@@ -20,6 +20,7 @@ namespace EasySECv2.Models
         ManualText,  // длинный текст — Editor
         ManualTimeFull,  // время пикер
         ManualDate,  // DatePicker
+
         Group,      // данные из таблицы групп
         Calculated, // текущая дата, месяц и т.п.
         Table,       // выбор произвольной таблицы
@@ -29,10 +30,11 @@ namespace EasySECv2.Models
         Orientation,
         Department,
         Staff,
-        Student,    // данные из таблицы студентов
+        Student,
 
         TableMembersAndSecretary,     // [ТАБЛИЦА_ПРЕДСЕДАТЕЛЬ]
         TableChairman,      // [ТАБЛИЦА_ЧЛЕНЫ]        
+        TableVkrTopic,      // [ТАБЛИЦА_ЧЛЕНЫ]        
 
     }
 

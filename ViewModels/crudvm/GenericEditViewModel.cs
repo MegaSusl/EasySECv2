@@ -8,12 +8,13 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using EasySECv2.Attributes;
+using EasySECv2.Models;
 using EasySECv2.Services;
 using Microsoft.Maui.Controls;
 
 namespace EasySECv2.ViewModels
 {
-    public class GenericEditViewModel<T> : INotifyPropertyChanged, IGenericEditViewModel
+    public partial class GenericEditViewModel<T> : INotifyPropertyChanged, IGenericEditViewModel
         where T : class, new()
     {
         readonly ICrudService<T> _service;
@@ -72,5 +73,57 @@ namespace EasySECv2.ViewModels
 
         void OnPropertyChanged([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+    public partial class GenericEditViewModel<T>
+    {
+        // ---------- lookup-коллекции, которые ищет GenericEditPage ----------
+        public ObservableCollection<Group> Groups { get; } = new();
+        public ObservableCollection<Orientation> Orientations { get; } = new();
+        public ObservableCollection<FormOfEducation> FormOfEducations { get; } = new();
+        public ObservableCollection<Institute> Institutes { get; } = new();
+        public ObservableCollection<Department> Departments { get; } = new();
+
+        // ---------- DB для их заполнения ----------
+        private readonly DatabaseService _db;
+
+        // ---------- расширенный конструктор ----------
+        public GenericEditViewModel(
+            ICrudService<T> service,
+            DatabaseService dbService,
+            T existing = null) : this(service, existing)   // вызывает ваш «старый» ctor
+        {
+            _db = dbService;
+            _ = LoadLookupsAsync();        // заполняем списки
+        }
+
+        // ---------- асинхронная подкачка справочников ----------
+        private async Task LoadLookupsAsync()
+        {
+            // если редактируем не Student – можно ничего не подкачивать
+            if (typeof(T) != typeof(Student)) return;
+
+            // NB: методы у DatabaseService уже есть
+            Groups.Clear();
+            foreach (var g in await _db.GetAllGroupsAsync()) Groups.Add(g);
+
+            Orientations.Clear();
+            foreach (var o in await _db.GetAllOrientationsAsync()) Orientations.Add(o);
+
+            FormOfEducations.Clear();
+            foreach (var f in await _db.GetAllFormsOfEducationAsync()) FormOfEducations.Add(f);
+
+            Institutes.Clear();
+            foreach (var i in await _db.GetAllInstitutesAsync()) Institutes.Add(i);
+
+            Departments.Clear();
+            foreach (var d in await _db.GetAllDepartmentsAsync()) Departments.Add(d);
+
+            // оповестим UI
+            OnPropertyChanged(nameof(Groups));
+            OnPropertyChanged(nameof(Orientations));
+            OnPropertyChanged(nameof(FormOfEducations));
+            OnPropertyChanged(nameof(Institutes));
+            OnPropertyChanged(nameof(Departments));
+        }
     }
 }

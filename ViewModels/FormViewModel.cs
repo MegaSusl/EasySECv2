@@ -75,7 +75,7 @@ public partial class FormViewModel : ObservableObject
                     field.IsPicker = true;
                     field.isVisible = true;
                     field.Options = institutes.Select(i => i.Name).ToList();
-                    field.ColumnOptions = new List<string> { "name", "shortName" }; // зависит от таблицы
+                    field.ColumnOptions = new List<string> { "Name", "ShortName" }; // зависит от таблицы
                     field.SelectedColumn = "name"; // по умолчанию
 
                     break;
@@ -85,8 +85,8 @@ public partial class FormViewModel : ObservableObject
                     field.IsPicker = true;
                     field.isVisible = true;
                     field.Options = formList.Select(f => f.Name).ToList();
-                    field.ColumnOptions = new List<string> { "name" }; // зависит от таблицы
-                    field.SelectedColumn = "name"; // по умолчанию
+                    field.ColumnOptions = new List<string> { "Name" }; // зависит от таблицы
+                    field.SelectedColumn = "Name"; // по умолчанию
 
                     break;
 
@@ -95,8 +95,8 @@ public partial class FormViewModel : ObservableObject
                     field.IsPicker = true;
                     field.isVisible = true;
                     field.Options = orientations.Select(o => o.Name).ToList();
-                    field.ColumnOptions = new List<string> { "name", "code" }; // зависит от таблицы
-                    field.SelectedColumn = "name"; // по умолчанию
+                    field.ColumnOptions = new List<string> { "Name", "Code" }; // зависит от таблицы
+                    field.SelectedColumn = "Name"; // по умолчанию
 
                     break;
 
@@ -105,8 +105,26 @@ public partial class FormViewModel : ObservableObject
                     field.IsPicker = true;
                     field.isVisible = true;
                     field.Options = departments.Select(d => d.Name).ToList();
-                    field.ColumnOptions = new List<string> { "name", "shortName"}; // зависит от таблицы
-                    field.SelectedColumn = "name"; // по умолчанию
+                    field.ColumnOptions = new List<string> { "Name", "ShortName"}; // зависит от таблицы
+                    field.SelectedColumn = "Name"; // по умолчанию
+                    break;
+
+                case MappingSourceType.Staff:
+                    var staffList = MauiProgram.GetService<DatabaseService>().GetAllStaffAsync().Result;
+                    field.IsPicker = true;
+                    field.isVisible = true;
+                    field.Options = staffList.Select(s => s.FullName).ToList();
+                    field.ColumnOptions = new List<string> { "FullName", "Position" };
+                    field.SelectedColumn = "FullName";
+                    break;
+
+                case MappingSourceType.Student:
+                    var students = MauiProgram.GetService<DatabaseService>().GetStudentsAsync().Result;
+                    field.IsPicker = true;
+                    field.isVisible = true;
+                    field.Options = students.Select(s => s.FullName).ToList();
+                    field.ColumnOptions = new List<string> { "FullName", "GroupName" };
+                    field.SelectedColumn = "FullName";
                     break;
 
                 case MappingSourceType.TableChairman:
@@ -134,6 +152,10 @@ public partial class FormViewModel : ObservableObject
                                 StaffOptions = staff
                             }
                         };
+                    break;
+
+                case MappingSourceType.TableVkrTopic:
+                    field.isVisible = false;                    
                     break;
 
                 default:
@@ -237,6 +259,13 @@ public partial class FormViewModel : ObservableObject
                         match = (await db.GetAllOrientationsAsync()).FirstOrDefault(o => o.Name == f.Value);
                         break;
 
+                    case MappingSourceType.Staff:
+                        match = (await db.GetAllStaffAsync()).FirstOrDefault(s => s.FullName == f.Value);
+                        break;
+
+                    case MappingSourceType.Student:
+                        match = (await db.GetStudentsAsync()).FirstOrDefault(s => s.FullName == f.Value);
+                        break;
                         // Добавляй другие таблицы здесь по аналогии
                 }
 
@@ -265,6 +294,7 @@ public partial class FormViewModel : ObservableObject
                 for (int i = 0; i < f.MemberPickers.Count; i++)
                 {
                     result[$"{f.Placeholder}_MEMBER{i + 1}_ID"] = f.MemberPickers[i].SelectedStaffId.ToString();
+                    Debug.WriteLine("[Members check] " + f.MemberPickers[i].SelectedStaffId.ToString());
                 }
                 continue;
             }
@@ -335,9 +365,18 @@ public partial class FormViewModel : ObservableObject
     }
     public partial class MemberSelection : ObservableObject
     {
+        // Сам объект Staff, который выбирает пользователь
+        [ObservableProperty]
+        private Staff? selectedStaff;
+
         [ObservableProperty]
         private long selectedStaffId;
         public List<Staff> StaffOptions { get; set; } = new(); // не строки, а целые объекты Staff
+                                                               // При смене Staff сразу обновляем Id
+        partial void OnSelectedStaffChanged(Staff? value)
+        {
+            SelectedStaffId = value?.Id ?? 0;
+        }
     }
 
 

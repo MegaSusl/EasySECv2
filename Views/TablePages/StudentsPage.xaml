@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:EasySECv2.ViewModels"
     xmlns:controls="clr-namespace:EasySECv2.Controls"
-    Title="Список студентов"
+    Title="Список студентов" 
     BackgroundColor="{StaticResource PageBackground}">
 
     <ContentPage.Resources>
@@ -110,23 +110,32 @@
           Spacing="6"
           HorizontalOptions="End">
                         <Button
-            Text="✎"
-            Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=EditCommand}"
-            CommandParameter="{Binding .}"
-            WidthRequest="32"
-            HeightRequest="32"
-            BackgroundColor="{StaticResource Primary}"
-            TextColor="White"
-            CornerRadius="4" />
+                            Text="📄"
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=FqwCommand}"
+                            CommandParameter="{Binding .}"
+                            WidthRequest="32"
+                            HeightRequest="32"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="4" />
                         <Button
-            Text="🗑"
-            Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=DeleteCommand}"
-            CommandParameter="{Binding .}"
-            WidthRequest="32"
-            HeightRequest="32"
-            BackgroundColor="{StaticResource Primary}"
-            TextColor="White"
-            CornerRadius="4" />
+                            Text="✎"
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=EditCommand}"
+                            CommandParameter="{Binding .}"
+                            WidthRequest="32"
+                            HeightRequest="32"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="4" />
+                        <Button
+                            Text="🗑"
+                            Command="{Binding Source={RelativeSource AncestorType={x:Type controls:CrudListView}}, Path=DeleteCommand}"
+                            CommandParameter="{Binding .}"
+                            WidthRequest="32"
+                            HeightRequest="32"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="4" />
                     </HorizontalStackLayout>
                 </Grid>
             </Frame>
@@ -144,6 +153,7 @@
         EditCommand="{Binding EditCommand}"
         DeleteCommand="{Binding DeleteCommand}"
         ImportCommand="{Binding ImportCommand}"
+        FqwCommand="{Binding OpenFqwCommand}"
         RefreshCommand="{Binding RefreshCommand}"
         SelectedItem="{Binding SelectedStudent}" />
 

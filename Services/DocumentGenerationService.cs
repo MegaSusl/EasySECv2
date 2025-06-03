@@ -14,6 +14,7 @@ using Group = EasySECv2.Models.Group;
 using Border = Xceed.Document.NET.Border;
 using VerticalAlignment = Xceed.Document.NET.VerticalAlignment;
 using Microsoft.Maui.Storage;
+using static EasySECv2.Services.DatabaseService;
 
 namespace EasySECv2.Services
 {
@@ -55,18 +56,18 @@ namespace EasySECv2.Services
                     foreach (var m in map) { Debug.WriteLine("[DEBUG] ЗНАЧЕНИЯ " + m.Key + m.Value); }                    
                     using var doc = DocX.Load(template.LocalPath);
 
-                    // Спец-обработка для студента
-                    if (data is Student student && doc.Text.Contains("[СТУДЕНТ:ФИО]"))
-                    {
-                        foreach (var p in doc.Paragraphs.ToList())
-                        {
-                            if (p.Text.Contains("[СТУДЕНТ:ФИО]"))
-                            {
-                                p.ReplaceText("[СТУДЕНТ:ФИО]", "");
-                                p.Append(student.FullName).Font("Times New Roman").FontSize(14);
-                            }
-                        }
-                    }
+                    //// Спец-обработка для студента
+                    //if (data is Student student && doc.Text.Contains("[СТУДЕНТ:ФИО]"))
+                    //{
+                    //    foreach (var p in doc.Paragraphs.ToList())
+                    //    {
+                    //        if (p.Text.Contains("[СТУДЕНТ:ФИО]"))
+                    //        {
+                    //            p.ReplaceText("[СТУДЕНТ:ФИО]", "");
+                    //            p.Append(student.FullName).Font("Times New Roman").FontSize(14);
+                    //        }
+                    //    }
+                    //}
 
                     var replacements = new Dictionary<string, string>();
                     var tables = new Dictionary<string, Table>();
@@ -205,30 +206,33 @@ namespace EasySECv2.Services
                             var mainRows = members;
                             if (members.Count == 0 && secretary != null)
                             {
-                                // если нет ни одного члена, но есть секретарь — покажем его в том же формате
                                 mainRows = new List<Staff> { secretary };
                             }
 
                             var commissionTable = BuildCommissionTable(doc, mainRows, secretary);
 
-                            // Если у нас и члены, и секретарь одновременно, 
-                            // то нужно “прилепить” таблицу секретаря под таблицу членов. 
-                            // Для этого создадим дополнительный Table-блок той же ширины
-                            // и скопируем из BuildCommissionTable формат «секретаря» специально.
-                            // Однако проще, если BuildCommissionTable умеет принимать List<Staff> из 5 человек,
-                            // где первые 4 — члены, а 5-й — секретарь.
-                            // Тогда достаточно:
-                            //
-                            //if (members.Count > 0 && secretary != null)
-                            //{
-                            //    Debug.WriteLine("[DEBUG] Генерация тСекр1.5");
-                            //    var combined = new List<Staff>(members.Take(4)) { secretary };
-                            //    commissionTable = BuildCommissionTable(doc, combined);
-                            //}
-
                             tables[key] = commissionTable;
                             Debug.WriteLine("[DEBUG] Генерация тСекр2");
                         }
+                        else if (mapping.SourceType == MappingSourceType.TableVkrTopic)
+                        {
+                            // определяем группу
+                            Group? Group = null;
+                            if (data is Group gCtx) Group = gCtx;
+                            else if (map.TryGetValue("ГРУППА_ID", out var gid) &&
+                                     long.TryParse(gid, out var gId)) Group = await _db.GetGroupByIdAsync(gId);
+                            else if (map.TryGetValue("ГРУППА", out var gName))
+                                Group = await _db.GetGroupByNameAsync(gName);
+
+                            if (Group != null)
+                            {
+                                var rows = await _db.GetVkrTopicsByGroupAsync(Group.Id);
+                                var vkrTbl = BuildVkrTopicTable(doc, rows);
+                                tables[key] = vkrTbl;   // key == "ТАБЛИЦА ТЕМЫ"
+                            }
+                        }
+
+
                         else
                         {
                             replacements[key] = value;
@@ -348,7 +352,7 @@ namespace EasySECv2.Services
             Debug.WriteLine("[Chairman] Filling row 3 data");
             var data = new[]
             {
-        "", "",
+        "Тест шифр", "Тест профиль",
         chairman.FullName ?? "",
         chairman.Position ?? "",
         chairman.Degree ?? "",
@@ -373,6 +377,10 @@ namespace EasySECv2.Services
         {
             Debug.WriteLine("[Commission] Start BuildCommissionTable");
             bool hasMembers = members != null && members.Count > 0;
+            foreach (var m in members)
+            {
+                Debug.WriteLine("[Commission] All members: " + m.FullName);
+            }
             bool hasSecretary = secretary != null;
             Debug.WriteLine($"[Commission] hasMembers={hasMembers}, hasSecretary={hasSecretary}");
 
@@ -478,8 +486,8 @@ namespace EasySECv2.Services
                     .Append((i + 1).ToString())
                     .Font("Times New Roman").FontSize(12)
                     .Alignment = Alignment.center;
-                rowM.Cells[1].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
-                rowM.Cells[2].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                rowM.Cells[1].Paragraphs[0].Append("Тест шифр").Font("Times New Roman").FontSize(12);
+                rowM.Cells[2].Paragraphs[0].Append("Тест профиль").Font("Times New Roman").FontSize(12);
 
                 if (i < members.Count)
                 {
@@ -555,8 +563,8 @@ namespace EasySECv2.Services
                     Debug.WriteLine($"[Commission] Filling secretary data at row {currentRow}");
                     var rowS = t.Rows[currentRow];
                     rowS.Cells[0].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
-                    rowS.Cells[1].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
-                    rowS.Cells[2].Paragraphs[0].Append("").Font("Times New Roman").FontSize(12);
+                    rowS.Cells[1].Paragraphs[0].Append("Тест шифр").Font("Times New Roman").FontSize(12);
+                    rowS.Cells[2].Paragraphs[0].Append("Тест наименование").Font("Times New Roman").FontSize(12);
                     rowS.Cells[3].Paragraphs[0]
                         .Append(secretary.FullName ?? "")
                         .Font("Times New Roman").FontSize(12)
@@ -576,6 +584,59 @@ namespace EasySECv2.Services
             }
 
             Debug.WriteLine("[Commission] Finished BuildCommissionTable");
+            return t;
+        }
+
+        private Table BuildVkrTopicTable(DocX doc, List<VkrTopicInfo> rows)
+        {
+            // +1 строка под шапку
+            var t = doc.AddTable(rows.Count + 1, 6);
+            t.Alignment = Alignment.center;
+            t.Design = TableDesign.TableGrid;
+            t.SetWidths(new float[] { 45f, 200f, 75f, 140f, 270f, 220f });
+
+            // --- шапка ---
+            string[] head = {
+                "№",
+                "ФИО студента",
+                "Шифр ОП",
+                "Профиль",
+                "Тема ВКР",
+                "Руководитель (ФИО, должность)"
+            };
+            for (int c = 0; c < head.Length; c++)
+                t.Rows[0].Cells[c].Paragraphs[0]
+                    .Append(head[c]).Font("Times New Roman").FontSize(12).Bold()
+                    .Alignment = Alignment.center;
+
+            // --- данные ---
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var r = rows[i];
+                var row = t.Rows[i + 1];
+
+                row.Cells[0].Paragraphs[0].Append((i + 1).ToString())
+                   .Font("Times New Roman").FontSize(12)
+                   .Alignment = Alignment.center;
+
+                row.Cells[1].Paragraphs[0].Append(r.StudentFio)
+                   .Font("Times New Roman").FontSize(12);
+
+                row.Cells[2].Paragraphs[0].Append(r.OrientationCode)
+                   .Font("Times New Roman").FontSize(12)
+                   .Alignment = Alignment.center;
+
+                row.Cells[3].Paragraphs[0].Append(r.OrientationName)
+                   .Font("Times New Roman").FontSize(12);
+
+                row.Cells[4].Paragraphs[0].Append(r.Topic)
+                   .Font("Times New Roman").FontSize(12);
+
+                row.Cells[5].Paragraphs[0].Append(
+                      $"{r.SupervisorFio}{(string.IsNullOrWhiteSpace(r.SupervisorPosition) ? "" : ", " + r.SupervisorPosition)}")
+                   .Font("Times New Roman").FontSize(12);
+            }
+
             return t;
         }
 
@@ -676,13 +737,18 @@ namespace EasySECv2.Services
                     MappingSourceType.Institute or
                     MappingSourceType.Department or
                     MappingSourceType.FormOfEducation or
+                    MappingSourceType.Student or
+                    MappingSourceType.Staff or
                     MappingSourceType.Orientation => raw,
 
-                    MappingSourceType.Student or MappingSourceType.Table =>
+                    MappingSourceType.Table =>
                         dataContext?.GetType().GetProperty(m.Property)?.GetValue(dataContext)?.ToString() ?? string.Empty,
+
                     MappingSourceType.Group =>
                         dataContext is Group g ? await BuildGroupValue(g, db) : string.Empty,
+
                     MappingSourceType.Calculated => GetCalculatedValue(m.Placeholder),
+
                     _ => string.Empty,
                 };
 

@@ -12,9 +12,10 @@ namespace EasySECv2.ViewModels
     public class StudentsViewModel : INotifyPropertyChanged
     {
         private readonly ICrudService<Student> _studentService;
+        private readonly ICrudService<FinalQualifyingWork> _fqwService;
         private readonly DatabaseService _dbService;
         private readonly ExcelAdapter _excelAdapter;
-
+        public ICommand OpenFqwCommand { get; }
         public ObservableCollection<Student> Students { get; } = new();
         public ObservableCollection<Group> Groups { get; } = new();
         public ObservableCollection<Orientation> Orientations { get; } = new();
@@ -97,12 +98,13 @@ namespace EasySECv2.ViewModels
         public ICommand ImportCommand { get; }
         public ICommand RefreshCommand { get; }
 
-        public StudentsViewModel(ICrudService<Student> studentService, DatabaseService dbService, ExcelAdapter excelAdapter)
+        public StudentsViewModel(ICrudService<Student> studentService, ICrudService<FinalQualifyingWork> fqwService, DatabaseService dbService, ExcelAdapter excelAdapter)
         {
             Trace.WriteLine("Страница студенты загрузка. 1");
             _dbService = dbService;
             _excelAdapter = excelAdapter;
             _studentService = studentService;
+            _fqwService = fqwService;
             Trace.WriteLine("Страница студенты загрузка. 2");
 
             AddCommand = new Command(OnAdd);
@@ -113,12 +115,26 @@ namespace EasySECv2.ViewModels
             Trace.WriteLine("Страница студенты загрузка. 4");
             RefreshCommand = new Command(async () => await LoadData());
             Trace.WriteLine("Страница студенты загрузка. 5");
-
+            OpenFqwCommand = new Command<Student>(async s => await OpenFqwAsync(s));
             // Инициализация фильтров и данных
             _ = LoadFiltersAsync();
             Trace.WriteLine("Страница студенты загрузка. 6");
             _ = LoadData();
             Trace.WriteLine("Страница студенты загрузка. 7");
+        }
+        private async Task OpenFqwAsync(Student s)
+        {
+            if (s == null) return;
+
+            // ▸ вместо GetAllAsync ищем запись через Query
+            var existing = await _fqwService.Query
+                                            .Where(f => f.StudentId == s.Id)
+                                            .FirstOrDefaultAsync();
+
+            var fqwId = existing?.Id ?? 0;
+
+            await Shell.Current.GoToAsync(
+                $"{nameof(FqwEditPage)}?id={fqwId}&studentId={s.Id}");
         }
 
         private async Task LoadFiltersAsync()
