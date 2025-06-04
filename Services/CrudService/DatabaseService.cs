@@ -205,7 +205,10 @@ namespace EasySECv2.Services
 
         //public List<object> GetAllByTableName(string tableName)
         //    => GetAllByTableNameAsync(tableName).GetAwaiter().GetResult();
-
+        public Task<Orientation?> GetOrientationByIdAsync(long id)
+            => _database.Table<Orientation>()
+                        .Where(o => o.Id == id)
+                        .FirstOrDefaultAsync();
         public async Task<List<object>> GetAllByTableNameAsync(string tableName)
         {
             var key = tableName?.Trim().ToLowerInvariant() ?? "";
@@ -379,6 +382,14 @@ namespace EasySECv2.Services
             return _database.QueryAsync<VkrTopicInfo>(sql, groupId);
         }
 
+        public Task<FinalQualifyingWork?> GetFqwByStudentIdAsync(long studentId) =>
+                _database.Table<FinalQualifyingWork>()
+                         .Where(f => f.StudentId == studentId)
+                         .FirstOrDefaultAsync();
+        public Task<Institute?> GetInstituteByIdAsync(long id) =>
+               _database.Table<Institute>()
+                        .Where(i => i.Id == id)
+                        .FirstOrDefaultAsync();
 
     }
 }

@@ -37,7 +37,7 @@ namespace EasySECv2.Models
         TableVkrTopic,      // [ТАБЛИЦА_ЧЛЕНЫ]        
 
         // Заготовки на будущее
-        ProtocolAutoFIO, //!
+        ProtocolAutoFio, //!
         ProtocolAutoDate, //!
         ProtocolAutoTime, //!
         ProtocolAutoOrientationCode, //!
@@ -45,9 +45,12 @@ namespace EasySECv2.Models
         ProtocolAutoGroupName,  //!
         ProtocolAutoSupervisorFio, //!
         ProtocolAutoFqwTopic, //!
+        ProtocolAutoDay,
+        ProtocolAutoMonth,
+        ProtocolAutoYear,
+        ProtocolAutoInstitute,
 
         ProtocolAutoRoom, 
-        ProtocolAutoInstitute,
         ProtocolAutoStudentCount,
         ProtocolAutoStudentList,
         ProtocolAutoFirstStudentFio,

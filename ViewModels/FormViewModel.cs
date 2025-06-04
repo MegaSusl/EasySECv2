@@ -15,9 +15,14 @@ public partial class FormViewModel : ObservableObject
     private readonly TaskCompletionSource<Dictionary<string, string>> _tcs = new();
     public Task<Dictionary<string, string>> Completion => _tcs.Task;
     public FormViewModel() { }
-
-    public void Load(List<PlaceholderMapping> mappings, List<Staff> staff, List<Institute> institutes)
+    private Student? _ctxStudent;
+    private FinalQualifyingWork? _ctxFqw;
+    private Staff? _ctxSupervisor;
+    public void Load(List<PlaceholderMapping> mappings, List<Staff> staff, List<Institute> institutes, Student? studentCtx = null, FinalQualifyingWork? fqwCtx = null, Staff? supervisorCtx = null)
     {
+        _ctxStudent = studentCtx;
+        _ctxFqw = fqwCtx;
+        _ctxSupervisor = supervisorCtx;
         Fields.Clear();
         foreach (var m in mappings)
         {
@@ -158,6 +163,21 @@ public partial class FormViewModel : ObservableObject
                     field.isVisible = false;                    
                     break;
 
+                case MappingSourceType.ProtocolAutoFio:
+                case MappingSourceType.ProtocolAutoDate:
+                case MappingSourceType.ProtocolAutoTime:
+                case MappingSourceType.ProtocolAutoOrientationCode:
+                case MappingSourceType.ProtocolAutoOrientationName:
+                case MappingSourceType.ProtocolAutoGroupName:
+                case MappingSourceType.ProtocolAutoSupervisorFio:
+                case MappingSourceType.ProtocolAutoFqwTopic:
+                case MappingSourceType.ProtocolAutoDay:
+                case MappingSourceType.ProtocolAutoMonth:
+                case MappingSourceType.ProtocolAutoYear:
+                case MappingSourceType.ProtocolAutoInstitute:
+                    field.isVisible = false;
+                    break;
+
                 default:
                     field.IsEntry = true;
                     field.isVisible = true;
@@ -206,29 +226,136 @@ public partial class FormViewModel : ObservableObject
 
     //    _tcs.TrySetResult(result);
     //}
+    //private async void Submit()
+    //{
+    //    var result = new Dictionary<string, string>();
+    //    var db = MauiProgram.GetService<DatabaseService>();
+
+    //    foreach (var f in Fields)
+    //    {
+    //        string value = f.Value;
+
+    //        // Форматирование даты
+    //        if (f.IsDate)
+    //        {
+    //            string realFormat = f.FormatMap.ElementAtOrDefault(f.SelectedFormatIndex).Key;
+    //            value = f.DateValue.ToString(realFormat, new CultureInfo("ru-RU"));
+    //        }
+    //        // Форматирование времени
+    //        else if (f.IsTime)
+    //        {
+    //            string realFormat = f.FormatMap.ElementAtOrDefault(f.SelectedFormatIndex).Key;
+    //            value = DateTime.Today.Add(f.TimeValue).ToString(realFormat);
+    //        }
+
+    //        // Спец. случай — длинный текст с мин. строками
+    //        if (f.SourceType == MappingSourceType.ManualText)
+    //        {
+    //            result[f.Placeholder] = f.Value;
+    //            result[$"{f.Placeholder}__min"] = f.MinLines.ToString();
+    //            continue;
+    //        }
+
+    //        // Обработка справочных таблиц с выбором колонки
+    //        if (f.IsPicker && !string.IsNullOrEmpty(f.SelectedColumn))
+    //        {
+    //            object? match = null;
+
+    //            switch (f.SourceType)
+    //            {
+    //                case MappingSourceType.Institute:
+    //                    match = (await db.GetAllInstitutesAsync()).FirstOrDefault(i => i.Name == f.Value);
+    //                    break;
+
+    //                case MappingSourceType.Department:
+    //                    match = (await db.GetAllDepartmentsAsync()).FirstOrDefault(d => d.Name == f.Value);
+    //                    break;
+
+    //                case MappingSourceType.FormOfEducation:
+    //                    match = (await db.GetAllFormsOfEducationAsync()).FirstOrDefault(foe => foe.Name == f.Value);
+    //                    break;
+
+    //                case MappingSourceType.Orientation:
+    //                    match = (await db.GetAllOrientationsAsync()).FirstOrDefault(o => o.Name == f.Value);
+    //                    break;
+
+    //                case MappingSourceType.Staff:
+    //                    match = (await db.GetAllStaffAsync()).FirstOrDefault(s => s.FullName == f.Value);
+    //                    break;
+
+    //                case MappingSourceType.Student:
+    //                    match = (await db.GetStudentsAsync()).FirstOrDefault(s => s.FullName == f.Value);
+    //                    break;
+    //                    // Добавляй другие таблицы здесь по аналогии
+    //            }
+
+    //            if (match != null)
+    //            {
+    //                var prop = match.GetType().GetProperty(f.SelectedColumn);
+    //                if (prop != null)
+    //                {
+    //                    var extracted = prop.GetValue(match)?.ToString() ?? "";
+    //                    Debug.WriteLine($"f.Placeholder = {f.Placeholder} extracted = {extracted}");
+    //                    result[f.Placeholder] = extracted;
+    //                    continue;
+    //                }
+    //            }
+    //        }
+
+    //        if (f.IsChairmanSelector)
+    //        {
+    //            result[f.Placeholder + "_CHAIRMAN_ID"] = f.SelectedChairmanId.ToString();
+    //            continue;
+    //        }
+
+    //        if (f.IsMemberAndSecretarySelector)
+    //        {
+    //            result[f.Placeholder + "_SECRETARY_ID"] = f.SelectedSecretaryId.ToString();
+    //            for (int i = 0; i < f.MemberPickers.Count; i++)
+    //            {
+    //                result[$"{f.Placeholder}_MEMBER{i + 1}_ID"] = f.MemberPickers[i].SelectedStaffId.ToString();
+    //                Debug.WriteLine("[Members check] " + f.MemberPickers[i].SelectedStaffId.ToString());
+    //            }
+    //            continue;
+    //        }
+
+
+    //        // Обычная запись
+    //        Debug.WriteLine($"f.Placeholder = {f.Placeholder} val = {value}");
+    //        result[f.Placeholder] = value;
+    //    }
+
+    //    _tcs.TrySetResult(result);
+    //}
+    /// <summary>
+    /// Собирает значения всех полей + «авто-маркеров» в словарь result
+    /// и завершает TaskCompletionSource.
+    /// </summary>
     private async void Submit()
     {
         var result = new Dictionary<string, string>();
         var db = MauiProgram.GetService<DatabaseService>();
 
+        // ------------------------------------------------------------------
+        // 1.  Проходимся по полям формы
+        // ------------------------------------------------------------------
         foreach (var f in Fields)
         {
             string value = f.Value;
 
-            // Форматирование даты
+            /* ---------- форматируем дату / время ---------- */
             if (f.IsDate)
             {
                 string realFormat = f.FormatMap.ElementAtOrDefault(f.SelectedFormatIndex).Key;
                 value = f.DateValue.ToString(realFormat, new CultureInfo("ru-RU"));
             }
-            // Форматирование времени
             else if (f.IsTime)
             {
                 string realFormat = f.FormatMap.ElementAtOrDefault(f.SelectedFormatIndex).Key;
                 value = DateTime.Today.Add(f.TimeValue).ToString(realFormat);
             }
 
-            // Спец. случай — длинный текст с мин. строками
+            /* ---------- длинный текст с ограничением по строкам ---------- */
             if (f.SourceType == MappingSourceType.ManualText)
             {
                 result[f.Placeholder] = f.Value;
@@ -236,75 +363,73 @@ public partial class FormViewModel : ObservableObject
                 continue;
             }
 
-            // Обработка справочных таблиц с выбором колонки
+            /* ---------- справочники с выбором колонки ---------- */
             if (f.IsPicker && !string.IsNullOrEmpty(f.SelectedColumn))
             {
-                object? match = null;
-
-                switch (f.SourceType)
+                object? match = f.SourceType switch
                 {
-                    case MappingSourceType.Institute:
-                        match = (await db.GetAllInstitutesAsync()).FirstOrDefault(i => i.Name == f.Value);
-                        break;
+                    MappingSourceType.Institute => (await db.GetAllInstitutesAsync()).FirstOrDefault(i => i.Name == f.Value),
+                    MappingSourceType.Department => (await db.GetAllDepartmentsAsync()).FirstOrDefault(d => d.Name == f.Value),
+                    MappingSourceType.FormOfEducation => (await db.GetAllFormsOfEducationAsync()).FirstOrDefault(e => e.Name == f.Value),
+                    MappingSourceType.Orientation => (await db.GetAllOrientationsAsync()).FirstOrDefault(o => o.Name == f.Value),
+                    MappingSourceType.Staff => (await db.GetAllStaffAsync()).FirstOrDefault(s => s.FullName == f.Value),
+                    MappingSourceType.Student => (await db.GetStudentsAsync()).FirstOrDefault(s => s.FullName == f.Value),
+                    _ => null
+                };
 
-                    case MappingSourceType.Department:
-                        match = (await db.GetAllDepartmentsAsync()).FirstOrDefault(d => d.Name == f.Value);
-                        break;
-
-                    case MappingSourceType.FormOfEducation:
-                        match = (await db.GetAllFormsOfEducationAsync()).FirstOrDefault(foe => foe.Name == f.Value);
-                        break;
-
-                    case MappingSourceType.Orientation:
-                        match = (await db.GetAllOrientationsAsync()).FirstOrDefault(o => o.Name == f.Value);
-                        break;
-
-                    case MappingSourceType.Staff:
-                        match = (await db.GetAllStaffAsync()).FirstOrDefault(s => s.FullName == f.Value);
-                        break;
-
-                    case MappingSourceType.Student:
-                        match = (await db.GetStudentsAsync()).FirstOrDefault(s => s.FullName == f.Value);
-                        break;
-                        // Добавляй другие таблицы здесь по аналогии
-                }
-
-                if (match != null)
+                if (match is not null)
                 {
                     var prop = match.GetType().GetProperty(f.SelectedColumn);
-                    if (prop != null)
-                    {
-                        var extracted = prop.GetValue(match)?.ToString() ?? "";
-                        Debug.WriteLine($"f.Placeholder = {f.Placeholder} extracted = {extracted}");
-                        result[f.Placeholder] = extracted;
-                        continue;
-                    }
+                    var extracted = prop?.GetValue(match)?.ToString() ?? "";
+                    result[f.Placeholder] = extracted;
+                    continue;
                 }
             }
 
+            /* ---------- председатель, члены, секретарь ---------- */
             if (f.IsChairmanSelector)
             {
-                result[f.Placeholder + "_CHAIRMAN_ID"] = f.SelectedChairmanId.ToString();
+                result[$"{f.Placeholder}_CHAIRMAN_ID"] = f.SelectedChairmanId.ToString();
                 continue;
             }
-
             if (f.IsMemberAndSecretarySelector)
             {
-                result[f.Placeholder + "_SECRETARY_ID"] = f.SelectedSecretaryId.ToString();
+                result[$"{f.Placeholder}_SECRETARY_ID"] = f.SelectedSecretaryId.ToString();
                 for (int i = 0; i < f.MemberPickers.Count; i++)
-                {
                     result[$"{f.Placeholder}_MEMBER{i + 1}_ID"] = f.MemberPickers[i].SelectedStaffId.ToString();
-                    Debug.WriteLine("[Members check] " + f.MemberPickers[i].SelectedStaffId.ToString());
-                }
                 continue;
             }
 
-
-            // Обычная запись
-            Debug.WriteLine($"f.Placeholder = {f.Placeholder} val = {value}");
+            /* ---------- обычное текстовое поле ---------- */
             result[f.Placeholder] = value;
         }
 
+        // ------------------------------------------------------------------
+        // 2.  Дописываем значения авто-маркеров ProtocolAuto…  (если есть контекст)
+        // ------------------------------------------------------------------
+        if (_ctxStudent is not null)
+        {
+            result["ProtocolAutoFIO"] = _ctxStudent.FullName;
+            result["ProtocolAutoGroupName"] =
+                (await db.GetGroupByIdAsync(_ctxStudent.groupId))?.Name ?? "";
+            var orient = await db.GetOrientationByIdAsync(_ctxStudent.orientation);
+            result["ProtocolAutoOrientationCode"] = orient?.Code ?? "";
+            result["ProtocolAutoOrientationName"] = orient?.Name ?? "";
+        }
+
+        if (_ctxFqw is not null)
+        {
+            result["ProtocolAutoDate"] = _ctxFqw.Date.ToString("dd.MM.yyyy");
+            result["ProtocolAutoTime"] = _ctxFqw.Date.ToString("HH:mm");
+            result["ProtocolAutoFqwTopic"] = _ctxFqw.Topic ?? "";
+        }
+
+        if (_ctxSupervisor is not null)
+            result["ProtocolAutoSupervisorFio"] = _ctxSupervisor.FullName;
+
+        // ------------------------------------------------------------------
+        // 3.  Завершаем TaskCompletionSource
+        // ------------------------------------------------------------------
         _tcs.TrySetResult(result);
     }
 

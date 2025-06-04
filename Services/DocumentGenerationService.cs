@@ -843,6 +843,59 @@ namespace EasySECv2.Services
 
                     MappingSourceType.Calculated => GetCalculatedValue(m.Placeholder),
 
+                    MappingSourceType.ProtocolAutoFio
+                        when dataContext is Student st
+                            => st.FullName,
+
+                    MappingSourceType.ProtocolAutoDate
+                        => DateTime.Now.ToString("dd.MM.yyyy"),
+
+                    MappingSourceType.ProtocolAutoTime
+                        => DateTime.Now.ToString("HH:mm"),
+
+                    MappingSourceType.ProtocolAutoOrientationCode
+                        when dataContext is Student st2
+                            => (await db.GetOrientationByIdAsync(st2.orientation))?.Code ?? "",
+
+                    MappingSourceType.ProtocolAutoOrientationName
+                        when dataContext is Student st3
+                            => (await db.GetOrientationByIdAsync(st3.orientation))?.Name ?? "",
+
+                    MappingSourceType.ProtocolAutoGroupName
+                        when dataContext is Student st4
+                            => (await db.GetGroupByIdAsync(st4.groupId))?.Name ?? "",
+                    
+                    MappingSourceType.ProtocolAutoInstitute
+                        when dataContext is Student st6
+                            => (await db.GetInstituteByIdAsync(st6.institute))?.Name ?? "",
+
+                    MappingSourceType.ProtocolAutoSupervisorFio
+                        when dataContext is Student st5
+                            => (await db.GetFqwByStudentIdAsync(st5.Id)) is { } fqw &&
+                               await db.GetStaffByIdAsync(fqw.SupervisorId) is { } sup
+                                    ? sup.FullName
+                                    : "",
+
+                    MappingSourceType.ProtocolAutoDay
+                        => DateTime.Now.Day.ToString(),                // «33»
+
+                    MappingSourceType.ProtocolAutoMonth
+                        => CultureInfo.GetCultureInfo("ru-RU")
+                                      .DateTimeFormat
+                                      .MonthGenitiveNames[DateTime.Now.Month - 1]
+                                      .Replace(char.MinValue, ' ')
+                                      .Trim()                                             // «мая»
+                                         is var month && month.Length > 0
+                                           ? char.ToUpper(month[0]) + month[1..]                  // «Мая»
+                                           : "",
+
+                    MappingSourceType.ProtocolAutoYear
+                        => DateTime.Now.Year.ToString(),              // «2025»
+
+                    MappingSourceType.ProtocolAutoFqwTopic
+                        when dataContext is Student st6
+                            => (await db.GetFqwByStudentIdAsync(st6.Id))?.Topic ?? "",
+
                     _ => string.Empty,
                 };
 
