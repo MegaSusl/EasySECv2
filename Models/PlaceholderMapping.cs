@@ -36,6 +36,27 @@ namespace EasySECv2.Models
         TableChairman,      // [ТАБЛИЦА_ЧЛЕНЫ]        
         TableVkrTopic,      // [ТАБЛИЦА_ЧЛЕНЫ]        
 
+        // Заготовки на будущее
+        ProtocolAutoFIO, //!
+        ProtocolAutoDate, //!
+        ProtocolAutoTime, //!
+        ProtocolAutoOrientationCode, //!
+        ProtocolAutoOrientationName, //!
+        ProtocolAutoGroupName,  //!
+        ProtocolAutoSupervisorFio, //!
+        ProtocolAutoFqwTopic, //!
+
+        ProtocolAutoRoom, 
+        ProtocolAutoInstitute,
+        ProtocolAutoStudentCount,
+        ProtocolAutoStudentList,
+        ProtocolAutoFirstStudentFio,
+        ProtocolAutoChairmanFio,
+        ProtocolAutoSecretaryFio,
+        ProtocolAutoCommissionList,
+        ProtocolAutoFqwMark,
+        ProtocolAutoGuestsList,
+        ProtocolAutoNextMeetingDate
     }
 
 }

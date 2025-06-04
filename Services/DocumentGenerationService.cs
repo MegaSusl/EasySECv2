@@ -352,13 +352,13 @@ namespace EasySECv2.Services
             Debug.WriteLine("[Chairman] Filling row 3 data");
             var data = new[]
             {
-        "Тест шифр", "Тест профиль",
-        chairman.FullName ?? "",
-        chairman.Position ?? "",
-        chairman.Degree ?? "",
-        chairman.DegreeRank ?? "",
-        chairman.DegreeAwards ?? ""
-    };
+                "Тест шифр", "Тест профиль",
+                chairman.FullName ?? "",
+                chairman.Position ?? "",
+                chairman.Degree ?? "",
+                chairman.DegreeRank ?? "",
+                chairman.DegreeAwards ?? ""
+            };
             for (int c = 0; c < 7; c++)
             {
                 Debug.WriteLine($"[Chairman] Row 3, Cell {c} -> '{data[c]}'");
@@ -640,7 +640,101 @@ namespace EasySECv2.Services
             return t;
         }
 
+        /// <summary>
+        /// Строит таблицу-график заседаний ГЭК.
+        /// ─ basic  (4 колонки)  – как на 1-м скрине  
+        /// ─ full   (6 колонок)  – с направлением и количеством студентов (2-й скрин)
+        /// </summary>
+        /// <param name="doc">Документ-приёмник</param>
+        /// <param name="extended">
+        ///     false  ➜ 4-колоночный вариант (по-умолчанию)  
+        ///     true   ➜ 6-колоночный вариант
+        /// </param>
+        /// <param name="dataRows">Сколько пустых строк снизу добавить</param>
+        public static Table BuildGekScheduleTable(DocX doc,
+                                                  bool extended = false,
+                                                  int dataRows = 8)
+        {
+            /* -----------------------------------------------------------
+             * 1) конфигурация под оба варианта
+             * -----------------------------------------------------------*/
+            string[] headers4 =
+            {
+                "Дата проведения",
+                "Время работы ГЭК",
+                "Место проведения (аудитория-корпус)",
+                "Примечание (группа и т.д.)"
+            };
 
+            string[] headers6 =
+            {
+                "Дата проведения",
+                "Время работы ГЭК",
+                "Место проведения (аудитория-корпус)",
+                "Направление\n(шифр, название)",
+                "Количество\nстудентов",
+                "Примечание\n(группа и т.д.)"
+            };
+
+            var headers = extended ? headers6 : headers4;
+
+            // ширины колонок в процентном соотношении к 100 % ширины контента
+            float[] widths4 = { 18, 18, 32, 32 };          // ≈ 100 %
+            float[] widths6 = { 15, 15, 23, 22, 12, 13 };  // 100 %
+
+            var widths = extended ? widths6 : widths4;
+
+            /* -----------------------------------------------------------
+             * 2) создаём таблицу
+             * -----------------------------------------------------------*/
+            int rows = dataRows + 1;
+            int cols = headers.Length;
+
+            var table = doc.AddTable(rows, cols);
+
+            // базовые границы
+            table.Design = TableDesign.TableGrid;
+            table.Alignment = Alignment.center;
+
+            // применяем тонкие границы ко всем сторонам
+            foreach (var bType in Enum.GetValues<TableBorderType>())
+                table.SetBorder(bType,
+                     new Border(BorderStyle.Tcbs_single, BorderSize.one, 0, Xceed.Drawing.Color.Black));
+
+            /* -----------------------------------------------------------
+             * 3) шапка
+             * -----------------------------------------------------------*/
+            for (int c = 0; c < cols; c++)
+            {
+                var cell = table.Rows[0].Cells[c];
+
+                cell.Paragraphs[0]
+                    .Append(headers[c])
+                    .Bold()
+                    .FontSize(11)
+                    .Alignment = Alignment.center;
+                
+                cell.VerticalAlignment = Xceed.Document.NET.VerticalAlignment.Center;
+            }
+
+            /* -----------------------------------------------------------
+             * 4) ширины колонок
+             * -----------------------------------------------------------*/
+            // Word считает ширину в twentieth of a point (1/1440 inch) – используем doc.PageWidth?
+            // Проще: берём 16 см рабочей области  =  16 cm * 567 twips/cm ≈ 9050 twips
+            const float total = 9050f;
+            for (int c = 0; c < cols; c++)
+                table.SetColumnWidth(c, total * widths[c] / 100f);
+
+            /* -----------------------------------------------------------
+             * 5) заполняем пустые строки-заглушки
+             * -----------------------------------------------------------*/
+            for (int r = 1; r < rows; r++)
+                for (int c = 0; c < cols; c++)
+                    table.Rows[r].Cells[c].Paragraphs[0].Append("").FontSize(11);
+
+            return table;
+        }
         private void ReplaceAllPlaceholdersWithRegex(DocX document, Dictionary<string, string> map)
         {
             var options = new FunctionReplaceTextOptions

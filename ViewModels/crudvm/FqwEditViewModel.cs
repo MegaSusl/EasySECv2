@@ -52,9 +52,15 @@ namespace EasySECv2.ViewModels
         private async Task LoadSupervisorsAsync()
         {
             var list = await _db.GetAllStaffAsync();
+
+            var eligible = list
+                .Where(s => s.IsSupervisor)           // ← фильтр по IsSupervisor
+                .OrderBy(s => s.Surname)              // сортируем для Picker-а
+                .ToList();
+
             Supervisors.Clear();
-            foreach (var staff in list)
-                Supervisors.Add(staff);
+            foreach (var s in eligible)
+                Supervisors.Add(s);
         }
 
         /* ------------------------------------------------------------------ */
