@@ -162,6 +162,9 @@ public partial class FormViewModel : ObservableObject
                 case MappingSourceType.TableVkrTopic:
                     field.isVisible = false;                    
                     break;
+                case MappingSourceType.TableReport:
+                    field.isVisible = false;                    
+                    break;
 
                 case MappingSourceType.ProtocolAutoFio:
                 case MappingSourceType.ProtocolAutoDate:

@@ -48,23 +48,49 @@ public partial class ChairmanReportViewModel : ObservableObject
         OnPropertyChanged(nameof(CanGenerate));
     }
 
+    //[RelayCommand(CanExecute = nameof(CanGenerate))]
+    //private async Task GenerateAsync()
+    //{
+    //    if (SelectedTemplate == null) return;
+
+    //    var staff = await _db.GetAllStaffAsync();
+    //    var institutes = await _db.GetAllInstitutesAsync();
+
+    //    var vm = new FormViewModel();
+    //    vm.Load(SelectedTemplate.Mappings, staff, institutes);
+
+    //    var page = new Views.FormPage { BindingContext = vm };
+    //    await Shell.Current.Navigation.PushAsync(page);
+    //    var manual = await vm.Completion;
+    //    await Shell.Current.Navigation.PopAsync();
+
+    //    await _generator.GenerateDocumentsAsync(SelectedTemplate, new List<object> { new object() }, manual, OutputFolder);
+    //}
     [RelayCommand(CanExecute = nameof(CanGenerate))]
     private async Task GenerateAsync()
     {
-        if (SelectedTemplate == null) return;
+        if (SelectedTemplate is null) return;
 
+        // 1. собираем сводку
+        var gekSummary = await _db.BuildGekResultAsync();
+
+        // 2. спрашиваем у пользователя остальные данные (как и раньше)
         var staff = await _db.GetAllStaffAsync();
         var institutes = await _db.GetAllInstitutesAsync();
 
         var vm = new FormViewModel();
         vm.Load(SelectedTemplate.Mappings, staff, institutes);
 
-        var page = new Views.FormPage { BindingContext = vm };
-        await Shell.Current.Navigation.PushAsync(page);
+        await Shell.Current.Navigation.PushAsync(new Views.FormPage { BindingContext = vm });
         var manual = await vm.Completion;
         await Shell.Current.Navigation.PopAsync();
 
-        await _generator.GenerateDocumentsAsync(SelectedTemplate, new List<object> { new object() }, manual, OutputFolder);
+        // 3. бросаем сводку первым (единственным) data-context’ом
+        await _generator.GenerateDocumentsAsync(
+            SelectedTemplate,
+            new List<object> { gekSummary },
+            manual,
+            OutputFolder);
     }
 
     [RelayCommand(CanExecute = nameof(CanDeleteTemplate))]

@@ -35,6 +35,7 @@ namespace EasySECv2.Models
         TableMembersAndSecretary,     // [ТАБЛИЦА_ПРЕДСЕДАТЕЛЬ]
         TableChairman,      // [ТАБЛИЦА_ЧЛЕНЫ]        
         TableVkrTopic,      // [ТАБЛИЦА_ЧЛЕНЫ]        
+        TableReport,      // [ТАБЛИЦА_ЧЛЕНЫ]        
 
         // Заготовки на будущее
         ProtocolAutoFio, //!
@@ -49,6 +50,8 @@ namespace EasySECv2.Models
         ProtocolAutoMonth,
         ProtocolAutoYear,
         ProtocolAutoInstitute,
+        //ReportAutoInstitute,
+        //ProtocolAutoInstitute,
 
         ProtocolAutoRoom, 
         ProtocolAutoStudentCount,

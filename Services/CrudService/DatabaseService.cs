@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Reflection;
 using System.Diagnostics;
+using static EasySECv2.Services.DocumentGenerationService;
 
 namespace EasySECv2.Services
 {
@@ -391,5 +392,116 @@ namespace EasySECv2.Services
                         .Where(i => i.Id == id)
                         .FirstOrDefaultAsync();
 
+        public async Task<GekResult> BuildGekResultAsync()
+        {
+            /* ──────────────────────────────────────────────────────────────
+             * 0.  Выясняем Id форм обучения (ищем по названию)
+             * ──────────────────────────────────────────────────────────────*/
+            var forms = await GetAllFormsOfEducationAsync().ConfigureAwait(false);
+
+            long fullId = forms.FirstOrDefault(f => f.Name.Contains("очная") &&
+                                                     !f.Name.Contains("заоч"))?.Id ?? 0; // очная
+            long mixedId = forms.FirstOrDefault(f => f.Name.Contains("очно-заоч"))?.Id ?? 0; // очно-заочная
+            long partId = forms.FirstOrDefault(f => f.Name.StartsWith("Заоч") ||
+                                                     f.Name.Contains("заочная"))?.Id ?? 0; // заочная
+
+            /* небольшая утилита для scalar-запросов */
+            async Task<int> CountAsync(string sql, params object[] args)
+                => await _database.ExecuteScalarAsync<int>(sql, args).ConfigureAwait(false);
+
+            /* ──────────────────────────────────────────────────────────────
+             * 1.  Блок «Государственный экзамен»
+             * ──────────────────────────────────────────────────────────────*/
+            // 1.1  «допущены»  → признак Student.IsAccessed = 1
+            const string SQL_EXAM_BASE = @"SELECT COUNT(*) FROM Student WHERE IsAccessed = 1 {0}";
+            int exAdmAll = await CountAsync(string.Format(SQL_EXAM_BASE, ""));
+            int exAdmFull = fullId == 0 ? 0 : await CountAsync(string.Format(SQL_EXAM_BASE, "AND FormOfEducation = ?"), fullId);
+            int exAdmMix = mixedId == 0 ? 0 : await CountAsync(string.Format(SQL_EXAM_BASE, "AND FormOfEducation = ?"), mixedId);
+            int exAdmPart = partId == 0 ? 0 : await CountAsync(string.Format(SQL_EXAM_BASE, "AND FormOfEducation = ?"), partId);
+
+            /* 1.1 оценки и 1.2 неявки
+               ─ в текущей модели таблицы госэкзамена нет, поэтому нули */
+            int exA = 0, exB = 0, exC = 0, exD = 0;
+            int exAbsAll = 0, exAbsFull = 0, exAbsMix = 0, exAbsPart = 0;
+
+            /* ──────────────────────────────────────────────────────────────
+             * 2.  Блок «Выпускная квалификационная работа»
+             * ──────────────────────────────────────────────────────────────*/
+            // 2.1  «принято к защите»  == простое наличие записи в fqw
+            int fqwAccAll = await CountAsync("SELECT COUNT(*) FROM fqw");
+            const string SQL_FQW_ACC_FORM = @"
+        SELECT COUNT(*) FROM fqw f
+        JOIN   Student              s ON s.Id = f.StudentId
+        WHERE  s.FormOfEducation = ?";
+            int fqwAccFull = fullId == 0 ? 0 : await CountAsync(SQL_FQW_ACC_FORM, fullId);
+            int fqwAccMix = mixedId == 0 ? 0 : await CountAsync(SQL_FQW_ACC_FORM, mixedId);
+            int fqwAccPart = partId == 0 ? 0 : await CountAsync(SQL_FQW_ACC_FORM, partId);
+
+            // 2.2  «защищено»  (IsAttended = 1)
+            int fqwDefAll = await CountAsync("SELECT COUNT(*) FROM fqw WHERE IsAttended = 1");
+            const string SQL_FQW_DEF_FORM = @"
+        SELECT COUNT(*) FROM fqw f
+        JOIN   Student              s ON s.Id = f.StudentId
+        WHERE  f.IsAttended = 1 AND s.FormOfEducation = ?";
+            int fqwDefFull = fullId == 0 ? 0 : await CountAsync(SQL_FQW_DEF_FORM, fullId);
+            int fqwDefMix = mixedId == 0 ? 0 : await CountAsync(SQL_FQW_DEF_FORM, mixedId);
+            int fqwDefPart = partId == 0 ? 0 : await CountAsync(SQL_FQW_DEF_FORM, partId);
+
+            // 2.3  оценки (A–D) среди защищённых
+            async Task<int> FqwMarkAsync(int mark) =>
+                await CountAsync("SELECT COUNT(*) FROM fqw WHERE IsAttended = 1 AND Mark = ?", mark);
+            int fqwA = await FqwMarkAsync(5);
+            int fqwB = await FqwMarkAsync(4);
+            int fqwC = await FqwMarkAsync(3);
+            int fqwD = await FqwMarkAsync(2);
+
+            // 2.4  «не явились»
+            int fqwAbsAll = await CountAsync("SELECT COUNT(*) FROM fqw WHERE IsAttended = 0");
+            const string SQL_FQW_ABS_FORM = @"
+        SELECT COUNT(*) FROM fqw f
+        JOIN   Student              s ON s.Id = f.StudentId
+        WHERE  f.IsAttended = 0 AND s.FormOfEducation = ?";
+            int fqwAbsFull = fullId == 0 ? 0 : await CountAsync(SQL_FQW_ABS_FORM, fullId);
+            int fqwAbsMix = mixedId == 0 ? 0 : await CountAsync(SQL_FQW_ABS_FORM, mixedId);
+            int fqwAbsPart = partId == 0 ? 0 : await CountAsync(SQL_FQW_ABS_FORM, partId);
+
+            // 2.5  «переносы»  – нет данных
+            int fqwPostAll = 0, fqwPostFull = 0, fqwPostMix = 0, fqwPostPart = 0;
+
+            // 2.6-2.9  (типы ВКР, рекомендации, оригинальность) – пока нули
+            int fqwResearch = 0, fqwPractice = 0, fqwProject = 0, fqwStartup = 0, fqwSocial = 0;
+            int fqwToPublish = 0, fqwToImplement = 0, fqwImplemented = 0;
+            int honourDiplomas = 0;
+            double? avgOriginality = null;
+
+            /* ──────────────────────────────────────────────────────────────
+             * 3.  Собираем DTO и возвращаем
+             * ──────────────────────────────────────────────────────────────*/
+            return new GekResult(
+                // 1.1
+                exAdmAll, exAdmFull, exAdmMix, exAdmPart,
+                // 1.1 оценки
+                exA, exB, exC, exD,
+                // 1.2
+                exAbsAll, exAbsFull, exAbsMix, exAbsPart,
+
+                // 2.1
+                fqwAccAll, fqwAccFull, fqwAccMix, fqwAccPart,
+                // 2.2
+                fqwDefAll, fqwDefFull, fqwDefMix, fqwDefPart,
+                // 2.3
+                fqwA, fqwB, fqwC, fqwD,
+                // 2.4
+                fqwAbsAll, fqwAbsFull, fqwAbsMix, fqwAbsPart,
+                // 2.5
+                fqwPostAll, fqwPostFull, fqwPostMix, fqwPostPart,
+
+                // 2.6-2.9
+                fqwResearch, fqwPractice, fqwProject, fqwStartup, fqwSocial,
+                fqwToPublish, fqwToImplement, fqwImplemented,
+                honourDiplomas,
+                avgOriginality
+            );
+        }
     }
 }

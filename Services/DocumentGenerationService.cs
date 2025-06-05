@@ -231,6 +231,14 @@ namespace EasySECv2.Services
                                 tables[key] = vkrTbl;   // key == "ТАБЛИЦА ТЕМЫ"
                             }
                         }
+                        if (mapping.SourceType == MappingSourceType.TableReport)
+                        {
+                            // dataContexts содержит наш объект-сводку GekResult
+                            var summary = dataContexts.OfType<GekResult>().FirstOrDefault();
+                            if (summary != null)
+                                tables[key] = BuildGekResultTable(doc, summary);
+                            continue;               // к следующему mapping
+                        }
 
 
                         else
@@ -284,6 +292,202 @@ namespace EasySECv2.Services
 
             Debug.WriteLine("[Генерация] Завершено.");
         }
+
+        #region ───────── DTO с агрегированными данными ─────────
+        public record GekResult(
+            // 1.1  ─ допущены
+            int ExamAdmittedAll, int ExamAdmittedFull, int ExamAdmittedExtra, int ExamAdmittedPart,
+            // 1.1 оценки
+            int ExamA, int ExamB, int ExamC, int ExamD,
+            // 1.2  ─ не явились
+            int ExamAbsentAll, int ExamAbsentFull, int ExamAbsentExtra, int ExamAbsentPart,
+
+            // 2.1  ─ принято к защите
+            int FqwAcceptedAll, int FqwAcceptedFull, int FqwAcceptedExtra, int FqwAcceptedPart,
+            // 2.2  ─ защищено
+            int FqwDefendedAll, int FqwDefendedFull, int FqwDefendedExtra, int FqwDefendedPart,
+            // 2.3  оценки защиты
+            int FqwA, int FqwB, int FqwC, int FqwD,
+            // 2.4  ─ не явились
+            int FqwAbsentAll, int FqwAbsentFull, int FqwAbsentExtra, int FqwAbsentPart,
+            // 2.5  ─ переносы
+            int FqwPostponedAll, int FqwPostponedFull, int FqwPostponedExtra, int FqwPostponedPart,
+
+            // 2.6  ─ типы ВКР
+            int FqwResearch, int FqwPractice, int FqwProject, int FqwStartup, int FqwSocial,
+            // 2.7  ─ рекомендации
+            int FqwToPublish, int FqwToImplement, int FqwImplemented,
+            // 2.8  ─ дипломы с отличием
+            int HonourDiplomas,
+            // 2.9  ─ средняя оригинальность
+            double? AvgOriginality
+        );
+        #endregion
+
+        /*───────────────────────────────────────────────────────*\
+         |      Таблица-«шахматка» + подробные DEBUG-логи        |
+        \*───────────────────────────────────────────────────────*/
+        private Table BuildGekResultTable(DocX doc, GekResult s)
+        {
+            const int COLS = 10;
+
+            /* ---------- 0. каркас ---------- */
+            var t = doc.AddTable(4 + 27, COLS);               // 3-стр. шапка + номератор + 27 строк
+            t.Design = TableDesign.TableGrid;
+            t.Alignment = Alignment.center;
+            t.AutoFit = AutoFit.Window;
+
+            var thin = new Border(BorderStyle.Tcbs_single, BorderSize.one, 0,
+                                  Xceed.Drawing.Color.Black);
+            foreach (TableBorderType b in Enum.GetValues<TableBorderType>())
+                t.SetBorder(b, thin);
+
+            /* ---------- 1. шапка ---------- */
+            // --- Row 0 ---
+            Debug.WriteLine("Row0 cells: " + t.Rows[0].Cells.Count);
+            t.Rows[0].Cells[0].Paragraphs[0].Append("№\nп/п").Alignment = Alignment.center;
+            t.Rows[0].Cells[1].Paragraphs[0].Append("Показатели").Alignment = Alignment.center;
+            t.Rows[0].Cells[2].Paragraphs[0].Append("Всего").Alignment = Alignment.center;
+            t.Rows[0].Cells[4].Paragraphs[0].Append("Форма обучения").Alignment = Alignment.center;
+
+            t.Rows[0].MergeCells(4, 9);
+            t.Rows[0].MergeCells(2, 3);
+
+            // --- Row 1 ---
+            Debug.WriteLine("Row1 cells: " + t.Rows[1].Cells.Count);
+            //t.Rows[1].Cells[2].Paragraphs[0].Append("кол").Alignment = Alignment.center;
+            //t.Rows[1].Cells[3].Paragraphs[0].Append("%").Alignment = Alignment.center;
+            t.Rows[1].Cells[4].Paragraphs[0].Append("очная").Alignment = Alignment.center;
+            t.Rows[1].Cells[6].Paragraphs[0].Append("очно-\nзаочная").Alignment = Alignment.center;
+            t.Rows[1].Cells[8].Paragraphs[0].Append("заочная").Alignment = Alignment.center;
+
+            /* горизонтальные слияния второй строки – строго справа-налево */
+            t.Rows[1].MergeCells(8, 9);   // сначала 8–9
+            t.Rows[1].MergeCells(6, 7);   // потом 6–7
+            t.Rows[1].MergeCells(4, 5);   // и только потом 4–5
+            t.Rows[1].MergeCells(2, 3);
+
+            // --- Row 2 ---
+            Debug.WriteLine("Row2 cells: " + t.Rows[2].Cells.Count);
+            string[] sub = { "кол", "%", "кол", "%", "кол", "%", "кол", "%" };
+            for (int i = 0; i < sub.Length; i++)
+                t.Rows[2].Cells[2 + i].Paragraphs[0].Append(sub[i]).Alignment = Alignment.center;
+
+            // вертикаль для «№» и «Показатели»
+            t.MergeCellsInColumn(0, 0, 2);
+            t.MergeCellsInColumn(1, 0, 2);
+            t.MergeCellsInColumn(2, 0, 1);
+            /* ---------- 2. нумератор 1‥10 ---------- */
+            int rowNum = 3;
+            Debug.WriteLine($"Row{rowNum} (нумератор) cells: {t.Rows[rowNum].Cells.Count}");
+            for (int c = 0; c < COLS; c++)
+                t.Rows[rowNum].Cells[c].Paragraphs[0]
+                  .Append((c + 1).ToString()).Alignment = Alignment.center;
+            rowNum++;   // → 1-я строка данных (индекс 4)
+
+            /* ---------- 3. хелперы ---------- */
+            void Caption(string text)
+            {
+                Debug.WriteLine($"Caption @row {rowNum}: {text}");
+                Debug.WriteLine($"  cells: {t.Rows[rowNum].Cells.Count}");
+                t.Rows[rowNum].MergeCells(0, 9);
+                t.Rows[rowNum].Cells[0].Paragraphs[0].Append(text).Bold();
+                rowNum++;
+            }
+            void Row(string? num, string caption,
+                     string all, string full = "", string mixed = "", string part = "")
+            {
+                Debug.WriteLine($"Row  @row {rowNum}: {caption}");
+                Debug.WriteLine($"  cells: {t.Rows[rowNum].Cells.Count}");
+                if (t.Rows[rowNum].Cells.Count < 10)
+                    throw new Exception($"Row {rowNum} has only {t.Rows[rowNum].Cells.Count} cells");
+
+                t.Rows[rowNum].Cells[0].Paragraphs[0]
+                  .Append(num ?? "").Alignment = Alignment.center;
+                t.Rows[rowNum].Cells[1].Paragraphs[0].Append(caption);
+
+                string[] vals = { all, "", full, "", mixed, "", part, "" };
+                for (int i = 0; i < vals.Length; i++)
+                    t.Rows[rowNum].Cells[2 + i].Paragraphs[0]
+                      .Append(vals[i]).Alignment = Alignment.center;
+
+                rowNum++;
+            }
+
+            /* ---------- 4. данные (как прежде) ---------- */
+            Caption("1.   Государственный экзамен (при наличии)");
+            Row("1.1", "Количество студентов, допущенных к экзамену",
+                s.ExamAdmittedAll.ToString(), s.ExamAdmittedFull.ToString(),
+                s.ExamAdmittedExtra.ToString(), s.ExamAdmittedPart.ToString());
+            Row(null, "в том числе получивших оценки: отлично", s.ExamA.ToString());
+            Row(null, "хорошо", s.ExamB.ToString());
+            Row(null, "удовлетворительно", s.ExamC.ToString());
+            Row(null, "неудовлетворительно", s.ExamD.ToString());
+            Row("1.2",
+                "Количество студентов, не явившихся на экзамен по уважительной / неуважительной причине",
+                s.ExamAbsentAll.ToString(), s.ExamAbsentFull.ToString(),
+                s.ExamAbsentExtra.ToString(), s.ExamAbsentPart.ToString());
+
+            Caption("2.   Выпускная квалификационная работа (ВКР)");
+            Row("2.1", "Принято к защите ВКР",
+                s.FqwAcceptedAll.ToString(), s.FqwAcceptedFull.ToString(),
+                s.FqwAcceptedExtra.ToString(), s.FqwAcceptedPart.ToString());
+            Row("2.2", "Защищено ВКР",
+                s.FqwDefendedAll.ToString(), s.FqwDefendedFull.ToString(),
+                s.FqwDefendedExtra.ToString(), s.FqwDefendedPart.ToString());
+            Row(null, "Результаты защиты ВКР: отлично", s.FqwA.ToString());
+            Row(null, "хорошо", s.FqwB.ToString());
+            Row(null, "удовлетворительно", s.FqwC.ToString());
+            Row(null, "неудовлетворительно", s.FqwD.ToString());
+            Row("2.4",
+                "Количество студентов, не явившихся на защиту ВКР по уважительной / неуважительной причине",
+                s.FqwAbsentAll.ToString(), s.FqwAbsentFull.ToString(),
+                s.FqwAbsentExtra.ToString(), s.FqwAbsentPart.ToString());
+            Row("2.5",
+                "Количество переносов защит ВКР в соответствии с приказом по университету",
+                s.FqwPostponedAll.ToString(), s.FqwPostponedFull.ToString(),
+                s.FqwPostponedExtra.ToString(), s.FqwPostponedPart.ToString());
+
+            Row("2.6", "Количество ВКР: исследовательского типа", s.FqwResearch.ToString());
+            Row(null, "практико-ориентированного типа", s.FqwPractice.ToString());
+            Row(null, "проектно-ориентированного типа", s.FqwProject.ToString());
+            Row(null, "ВКР «Стартап как диплом»", s.FqwStartup.ToString());
+            Row(null, "ВКР как социально-значимый проект", s.FqwSocial.ToString());
+
+            Row("2.7", "Количество ВКР, рекомендованных: к опубликованию", s.FqwToPublish.ToString());
+            Row(null, "к внедрению", s.FqwToImplement.ToString());
+            Row(null, "внедрённых", s.FqwImplemented.ToString());
+
+            Row("2.8", "Количество дипломов с отличием", s.HonourDiplomas.ToString());
+
+            Row("2.9", "Результаты проверки ВКР на наличие заимствований:", "");
+            Row(null, "среднее значение оригинальности ВКР, %¹",
+                s.AvgOriginality?.ToString("0.0") ?? "");
+
+            Debug.WriteLine($"ФИНАЛ: rowNum={rowNum}, tableRows={t.RowCount}");
+
+            /* ---------- 5. шрифт ---------- */
+            foreach (var p in t.Paragraphs)
+                p.Font("Times New Roman").FontSize(11);
+
+            // ---------- 6. вертикальное выравнивание ----------
+            foreach (var row in t.Rows)
+                foreach (var cell in row.Cells)
+                    cell.VerticalAlignment = Xceed.Document.NET.VerticalAlignment.Center;
+
+            // ---------- 8. высота строк ----------
+            t.Rows[0].Height = 18;  // Верхняя строка «№ п/п», «Форма обучения»
+            t.Rows[1].Height = 16;  // Средняя строка с «очная», «заочная»
+            t.Rows[2].Height = 16;  // «кол / %»
+            t.Rows[3].Height = 14;  // строка с номерами 1..10
+            for (int i = 4; i < t.RowCount; i++)  // начиная с 4-й строки (данные)
+            {
+                t.Rows[i].MinHeight = 16;
+            }
+
+            return t;
+        }
+
 
         private Table BuildChairmanTable(DocX doc, Staff chairman)
         {
@@ -371,7 +575,6 @@ namespace EasySECv2.Services
             Debug.WriteLine("[Chairman] Finished BuildChairmanTable");
             return t;
         }
-
 
         private Table BuildCommissionTable(DocX doc, List<Staff> members, Staff? secretary = null)
         {
@@ -753,7 +956,7 @@ namespace EasySECv2.Services
             document.ReplaceText(options);
         }
 
-        private void ReplaceAllSmart(DocX doc, Dictionary<string, string> replacements, Dictionary<string, Table> tables)
+        private void ReplaceAllSmart(DocX doc, Dictionary<string, string> replacements, Dictionary<string, Table> tables, double? fontsize = 10)
         {
             var paragraphs = doc.Paragraphs.ToList();
 
@@ -775,7 +978,14 @@ namespace EasySECv2.Services
                     {
                         // Удаляем старый текст и создаем новый с нужным стилем
                         para.ReplaceText($"[{key}]", string.Empty);
-                        para.Append(value).Font("Times New Roman").FontSize(14);
+                        if (fontsize != null)
+                        {
+                            para.Append(value).Font("Times New Roman").FontSize((double)fontsize);
+                        }
+                        else
+                        {
+                            para.Append(value).Font("Times New Roman");
+                        }
                     }
 
                 }
